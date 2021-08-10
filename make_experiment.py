@@ -150,6 +150,7 @@ def main():
 
     wd = os.getcwd()
 
+    oldmask = os.umask(000)
     os.makedirs(exp_name, exist_ok = True)
     os.makedirs(exp.get("log_dir"), exist_ok = True)
     os.makedirs(os.path.join(exp_name, "experiment_scripts"), exist_ok = True)
@@ -157,10 +158,11 @@ def main():
     os.makedirs(os.path.join(exp_name, "synthetic_data"), exist_ok = True)
     os.makedirs(os.path.join(exp_name, "results"), exist_ok = True)
     os.makedirs(os.path.join(exp_name, "figures"), exist_ok = True)
+    os.umask(oldmask)
 
     ## Stage I 
     stage_I_content = INFER_LOADINGS_TEMPLATE.format(
-        jobname = "infer_loadings_initial" + exp_name,
+        jobname = "infer_loadings_initial_" + exp_name,
         log_dir = os.path.join(wd, exp.get("log_dir")),
         virtual_env = exp.get("virtual_env"),
         BPS_dir = wd,
@@ -194,7 +196,7 @@ def main():
     seed = exp.get("synthetic_data_seed")
 
     stage_II_content = GENERATE_SYNTHETIC_TEMPLATE.format(
-        jobname = "generate_synthetic_data" + exp_name,
+        jobname = "generate_synthetic_data_" + exp_name,
         log_dir = os.path.join(wd, exp.get("log_dir")),
         virtual_env = exp.get("virtual_env"),
         BPS_dir = wd,
@@ -237,7 +239,7 @@ def main():
             exp_name = exp_name,
             seed_start = exp.get("seed_start"),
             seed_end = exp.get("seed_end"),
-            I = 96,
+            I = 96 if exp.get("subst_type") == "SBS" else (78 if exp.get("subst_type") == "DBS" else 83),
             n = exp.get("num_samples"),
             K = exp.get("K"),
             synthetic_prefix = synthetic_prefix,
