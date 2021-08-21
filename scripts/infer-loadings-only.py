@@ -5,7 +5,6 @@ from collections import OrderedDict
 
 import numpy as np
 import scipy as sp
-from scipy.stats import nbinom
 import pandas as pd
 import pystan
 
@@ -56,7 +55,7 @@ def main():
     
     # load count data and filter
     full_df = load_sbs_data(args.data)
-    filtered_df = full_df.loc[:,full_df.columns.str.startswith(args.filter)]
+    filtered_df = full_df[full_df.columns[full_df.columns.str.startswith(args.filter)]]
     filtered_data = filtered_df.values
     sample_names = filtered_df.columns
     max_samples = args.num_samples if args.num_samples > 0 else np.inf
@@ -135,7 +134,7 @@ def load_sbs_data(path, df = None):
             print(df)
             print(data)
             raise
-    return df
+    return df.T
 
 
 ## STILL NEED TO WORK ON!!

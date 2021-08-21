@@ -7,12 +7,6 @@ import numpy as np
 import scipy as sp
 from scipy.stats import nbinom
 import pandas
-import pystan
-
-import seaborn as sns
-# make figures pretty
-sns.set_style('white')
-sns.set_context('notebook', font_scale=2, rc={'lines.linewidth': 3})
 
 from mutsigtools import  mutsig, models, analysis, plotting
 
