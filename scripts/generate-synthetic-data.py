@@ -13,15 +13,15 @@ from mutsigtools import  mutsig, models, analysis, plotting
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('synthetic-prefix')
+    parser.add_argument('prefix')
     parser.add_argument('--signatures-file', default="")
     parser.add_argument('--signatures-prefix', default="Signature")
     parser.add_argument('--save-dir', default='.')
     parser.add_argument('-s', '--seed', type=int, default=1)
     parser.add_argument('-n', '--num-samples', type=int, default=0)
-    parser.add_argument('--overdispersion-param', type=int, nargs = "*")
-    parser.add_argument('--errorsig-param', type=int, nargs = "*")
-    parser.add_argument('--negbin-param', type=float, nargs = "*")
+    parser.add_argument('--overdispersed', type=int, nargs = "*")
+    parser.add_argument('--errorsig', type=int, nargs = "*")
+    parser.add_argument('--negbin', type=float, nargs = "*")
     parser.add_argument('--signatures', metavar='K', type=int, nargs='*', default=0)
     return parser.parse_args()
 
@@ -43,7 +43,7 @@ def main():
     args = parse_args()
     
     # construct filenames and descriptions
-    base_description = args.synthetic_prefix
+    base_description = args.prefix
     loadings_file_base = os.path.join(args.save_dir, base_description + '-loadings')
     loadings_file = loadings_file_base + '.npy'
     output_file_template = os.path.join(args.save_dir,
@@ -69,11 +69,13 @@ def main():
     print('Using', ', '.join(sig_names))
 
     # generate synthetic data
-    configs = [('correct', None)] + [('overdispersed', p) for p in args.overdispersion_param] + [('errorsig', p) for p in args.errorsig_param] + [('negbin', p) for p in args.negbin_param]
+    configs = [('correct', None)] + [('overdispersed', p) for p in args.overdispersed] + [('errorsig', p) for p in args.errorsig] + [('negbin', p) for p in args.negbin]
 
     for synth_type, param in configs:
         if synth_type == 'correct':
-            
+            counts = generate_overdispersed_counts(loadings_array, sigs,
+                                                   concentration=np.inf,
+                                                   seed=args.seed)    
         elif synth_type == 'overdispersed':
             counts = generate_overdispersed_counts(loadings_array, sigs,
                                                    concentration=param,

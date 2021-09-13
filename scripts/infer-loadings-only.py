@@ -87,7 +87,7 @@ def main():
     print('Using', ', '.join(sig_names))
     
     # infer loadings
-    kwargs = dict(iters=1500)
+    kwargs = dict(iters=3000)
     if args.a != 0:
         kwargs['a'] = args.a
     if args.zeta != 1:
@@ -98,10 +98,10 @@ def main():
         kwargs['iters'] = args.iters
     if args.MAP is True:
         kwargs['use_map'] = True
-    fits, loadings = models.infer_loadings(sigs, sig_names, Xs, **kwargs)
+    fits = models.infer_loadings(sigs, sig_names, Xs, **kwargs)
+    
     point_est = np.median if args.median else np.mean
-    loadings_array = np.array([point_est(fit['theta'], 0)
-                               for fit in fits.values()]).T
+    loadings_array = point_est(fits['theta'], 0)
     np.save(loadings_file, loadings_array)
     
     plotting.plot_loadings_matrix(loadings_array, sig_names,
