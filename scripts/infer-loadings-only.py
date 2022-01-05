@@ -26,12 +26,16 @@ def parse_args():
     parser.add_argument('-n', '--num-samples', type=int, default=0)
     parser.add_argument('-a', type=float, default=0)
     parser.add_argument('--zeta', type=float, default=1)
-    parser.add_argument('--rho', type=int, default=None, nargs='*')
     parser.add_argument('--iters', type=int, default=None)
     parser.add_argument('--median', action='store_true')
     parser.add_argument('--MAP', action='store_true')
+    parser.add_argument('--plain', action='store_true')
+    parser.add_argument('--sparse', action='store_true')
+    parser.add_argument('--prob-zero', type=float, default=None)
+    parser.add_argument('--quantile1', type=float, default=None)
+    parser.add_argument('--quantile99', type=float, default=None)
     parser.add_argument('--subst-type', default='SBS', choices=['SBS', 'DBS', 'INDEL'])
-    parser.add_argument('--signatures', metavar='K', type=int, nargs='*', default=0)
+    parser.add_argument('--signatures', metavar='K', nargs='*', default=0)
     return parser.parse_args()
 
 
@@ -54,20 +58,31 @@ def main():
     args = parse_args()
     
     # load count data and filter
-    full_df = load_sbs_data(args.data)
-    filtered_df = full_df[full_df.columns[full_df.columns.str.startswith(args.filter)]]
+    full_df = load_sbs_data(args.data, args.plain)
+    if not args.plain:
+        filtered_df = full_df[full_df.columns[full_df.columns.str.startswith(args.filter)]]
+        sample_names = filtered_df.columns
+    else:
+        filtered_df = full_df
+        sample_names = args.filter + "_" + filtered_df.columns
     filtered_data = filtered_df.values
-    sample_names = filtered_df.columns
+
     max_samples = args.num_samples if args.num_samples > 0 else np.inf
     num_samples = min(max_samples, len(sample_names))
     print('Using', num_samples, 'samples')
     Xs = { sample_names[i] : filtered_data[:,i] for i in range(num_samples) }
     
     # construct filenames and descriptions
-    base_description = 'synthetic-{}-{}-{}'.format(
-        num_samples, args.filter, '-'.join(map(str, args.signatures))).lower()
+    if args.signatures == 0:
+        base_description = 'synthetic-{}-{}-{}'.format(
+            num_samples, args.filter, "all").lower()
+    else:
+        base_description = 'synthetic-{}-{}-{}'.format(
+            num_samples, args.filter, '-'.join(map(str, args.signatures))).lower()
     if args.a != 0:
         base_description += '-a-{:.2f}'.format(args.a)
+    if args.zeta != 1:
+        base_description += '-zeta-{:.1f}'.format(args.zeta)
     if args.median:
         base_description += '-median'
     loadings_file_base = os.path.join(args.save_dir, base_description + '-loadings')
@@ -76,11 +91,18 @@ def main():
     
     # load signatures
     if args.signatures_file == "":
-        ref_sigs, ref_sig_names = mutsig.cosmic_signatures()
+        ref_sigs, ref_sig_names = mutsig.cosmic_signatures(subst_type = args.subst_type)
     else:
         ref_sigs, ref_sig_names = read_new_sigs(args.signatures_file, args.signatures_prefix)
     ref_sigs[ref_sigs <= 0] = 1e-10
-    use_sig_inds = np.array(args.signatures) - 1
+
+    if args.signatures == 0:
+        use_sig_inds = np.arange(len(ref_sig_names))
+    elif args.signatures_file == "":
+        use_sig_inds = np.array(mutsig.pcawg2018_SBS_to_index(args.signatures)) - 1
+    else:
+        use_sig_inds = np.array(args.signatures) - 1
+    
     num_sigs = use_sig_inds.size
     sigs = ref_sigs[use_sig_inds]
     sig_names = ref_sig_names[use_sig_inds]
@@ -92,12 +114,21 @@ def main():
         kwargs['a'] = args.a
     if args.zeta != 1:
         kwargs['lik_power'] = args.zeta
-    if args.rho is not None:
-        kwargs['rho'] = args.rho
     if args.iters is not None:
         kwargs['iters'] = args.iters
     if args.MAP is True:
         kwargs['use_map'] = True
+    
+    if args.sparse is True:
+        p = args.prob_zero or 0.75
+        l99 = args.quantile99 or np.mean(pd.DataFrame.from_dict(Xs).values.astype("int").sum(axis = 0)) / 2
+        kwargs['a0'], kwargs['b0'] = models.set_prior_hyperparameters(p, l99)
+    else:
+        lst = np.sort(pd.DataFrame.from_dict(Xs).values.astype("int").sum(axis = 0))
+        l1 = args.quantile1 or lst[0] / len(sigs)
+        l99 = args.quantile99 or lst[-1] / len(sigs)
+        kwargs['a0'], kwargs['b0'] = models.set_prior_hyperparameters(l1, l99, False)
+    
     fits = models.infer_loadings(sigs, sig_names, Xs, **kwargs)
     
     point_est = np.median if args.median else np.mean
@@ -118,13 +149,17 @@ def main():
     print('max loadings:', np.round(100*max_loadings))
 
 
-def load_sbs_data(path, df = None):
+def load_sbs_data(path, plain = False, df = None):
     print(path)
 
     data = pd.read_csv(path, sep = "\t").T
-    data.columns = data.loc['Substitution']
-    data = data.drop('Substitution')
-    data.columns.names = ['']
+    if not plain:
+        data.columns = data.loc['Substitution']
+        data = data.drop('Substitution')
+        data.columns.names = ['']
+    else:
+        data = data.iloc[1:, :]
+    
     if df is None:
         df = data
     else:

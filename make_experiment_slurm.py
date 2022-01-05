@@ -6,12 +6,13 @@ import os
 import sys
 
 INFER_LOADINGS_TEMPLATE = """#!/usr/bin/bash
+#SBATCH -c 4
 #SBATCH --job-name {jobname} 
-#SBATCH -t 0-08:00 
+#SBATCH -t 0-12:00 
 #SBATCH -p {queue}
 #SBATCH --mem=32G 
-#SBATCH -o {log_dir}/output_{jobname}_%j.out 
-#SBATCH -e {log_dir}/error_{jobname}_%j.err 
+#SBATCH -o {log_dir}/output_%j_{jobname}.out 
+#SBATCH -e {log_dir}/error_%j_{jobname}.err 
 
 module load gcc/8.2.0-fasrc01 python/3.8.5-fasrc01
 
@@ -27,8 +28,8 @@ GENERATE_SYNTHETIC_TEMPLATE = """#!/usr/bin/bash
 #SBATCH -t 0-01:00 
 #SBATCH -p {queue}
 #SBATCH --mem=32G 
-#SBATCH -o {log_dir}/output_{jobname}_%j.out 
-#SBATCH -e {log_dir}/error_{jobname}_%j.err 
+#SBATCH -o {log_dir}/output_%j_{jobname}.out 
+#SBATCH -e {log_dir}/error_%j_{jobname}.err 
 
 module load gcc/8.2.0-fasrc01 python/3.8.5-fasrc01
 
@@ -36,7 +37,7 @@ eval "$(conda shell.bash hook)"
 conda activate {conda_env}
 
 cd {BPS_dir}
-python scripts/generate-synthetic-data.py {new_prefix} {signatures_cond}--signatures-prefix {signatures_prefix} --save-dir {save_dir} -s {seed} --signatures-prefix {signatures_prefix} --save-dir {save_dir} -s {seed} -n {num_samples} --overdispersed {overdispersed} --negbin {negbin} --errorsig {errorsig} --signatures {signatures} 
+python scripts/generate-synthetic-data.py {new_prefix} {signatures_cond}--signatures-prefix {signatures_prefix} --save-dir {save_dir} -s {seed} -n {num_samples} --overdispersed {overdispersed} --negbin {negbin} --errorsig {errorsig} --signatures {signatures} {sparse}
 """
 
 INFER_LOADINGS_AND_SIGS_TEMPLATE = """#!/bin/bash
@@ -44,8 +45,8 @@ INFER_LOADINGS_AND_SIGS_TEMPLATE = """#!/bin/bash
 #SBATCH -t 2-00:00 
 #SBATCH -p {queue}
 #SBATCH --mem=32G 
-#SBATCH -o {log_dir}/output_{jobname}_%j.out 
-#SBATCH -e {log_dir}/error_{jobname}_%j.err  
+#SBATCH -o {log_dir}/output_%j_{jobname}.out 
+#SBATCH -e {log_dir}/error_%j_{jobname}.err  
 
 module load gcc/8.2.0-fasrc01 python/3.8.5-fasrc01
 
@@ -71,12 +72,14 @@ python infer-mutsigs.py $data ${{results_dir}} -m normalized_v2 -s $S -b $B -I $
 
 INFER_LOADINGS_AND_SIGS_LOOP_TEMPLATE = """#!/bin/bash
 
+cd {BPS_dir}/{exp_name}
+
 for zeta in {powers}
 do
-    for type in {exp_list}
+    while read type
     do
         sbatch -l h_rt={max_time} --job-name stan-{synthetic_prefix}-zeta-$zeta-J-{n}-Kmax-{K}-S-{samps}-B-{burnin} -t {seed_start}-{seed_end} -l h_vmem=16g -j y -o {log_dir} helper/run-seeded-stan.sh $zeta {n} ../{exp_name}/synthetic_data/{synthetic_prefix}-seed-$type.tsv {I} {K} {samps} {burnin} {thin} ../{exp_name}/results "{opts}"
-    done
+    done < ../{exp_name}/synthetic_data/exp_list.txt
 done
 """
 
@@ -90,8 +93,8 @@ MAKE_PLOTS_TEMPLATE = """#!/bin/bash
 #SBATCH -t 0-06:00 
 #SBATCH -p {queue}
 #SBATCH --mem=32G 
-#SBATCH -o {log_dir}/output_{jobname}_%j.out 
-#SBATCH -e {log_dir}/error_{jobname}_%j.err 
+#SBATCH -o {log_dir}/output_%j_{jobname}.out 
+#SBATCH -e {log_dir}/error_%j_{jobname}.err 
 
 module load gcc/8.2.0-fasrc01 python/3.8.5-fasrc01
 
@@ -99,7 +102,7 @@ eval "$(conda shell.bash hook)"
 conda activate {conda_env}
 
 cd {BPS_dir}
-python scripts/generate-multi-zeta-results-figs.py {experiment_name}-burnin-{B}-samps-{S}-K-{K} a-{a:.2f}-J0-{J0:.1f} {base_dir} {rho_cond}{signatures_cond}--seeds {seeds} --zetas {zetas} --skip {skip} --save-dir {save_dir} --results-dir {results_dir} --counts-file {data} --subst-type {subst_type} {opts}
+python scripts/generate-multi-zeta-results-figs.py {experiment_name}-burnin-{B}-samps-{S}-K-{K} a-{a:.2f}-J0-{J0:.1f} {base_dir} {rho_cond}{signatures_cond}--seeds {seeds} --zetas {zetas} --skip {skip} --save-dir {save_dir} --results-dir {results_dir} --counts-file {data} --subst-type {subst_type} --prob-zero {p0} --quantile1 {l1} --quantile99 {l99} {opts}
 """
 
 def parse_args():
@@ -156,7 +159,10 @@ def main():
         signatures = exp.get("putative_sigs"),
         a = exp.getfloat("a_init"),
         zeta = exp.get("loadings_inference_power"),
-        opts = ("" if exp.getboolean("median") is False else "--median ") + ("" if exp.getboolean("MAP") is False else "--MAP ") + ("" if exp.get("rho_init") == "" else "--rho {} ".format(exp.get("rho_init"))) + ("" if exp.get("iters") == "" else "--iters {} ".format(exp.get("iters")))
+        p0 = exp.get("p_sigs_zero_init"),
+        l1 = exp.get("loadings_quantile_1_init"),
+        l99 = exp.get("loadings_quantile_99_init"),
+        opts = ("" if exp.getboolean("sparse_init") is False else "--sparse ") + ("" if exp.getboolean("median") is False else "--median ") + ("" if exp.getboolean("MAP") is False else "--MAP ") + ("" if exp.get("iters") == "" else "--iters {} ".format(exp.get("iters")))
     )
 
     with open(os.path.join(exp_name, "experiment_scripts", "stage_I.sh"), "w+") as f:
@@ -169,6 +175,8 @@ def main():
     ).lower()
     if exp.getfloat("a_init") != 0:
         synthetic_prefix += '-a-{:.2f}'.format(float(exp.get("a_init")))
+    if exp.getfloat("loadings_inference_power") != 1:
+        base_description += '-zeta-{:.1f}'.format(float(exp.get("loadings_inference_power")))
     if exp.getboolean("median") is True:
         synthetic_prefix += '-median'
 
@@ -190,7 +198,8 @@ def main():
         overdispersed = exp.get("overdispersed"),
         negbin = exp.get("negbin"),
         errorsig = exp.get("error_sig"),
-        signatures = exp.get("putative_sigs")
+        signatures = exp.get("putative_sigs"),
+        sparse = "" if (exp.getboolean("sparse_init") or exp.getboolean("trim_sigs")) else "--trim" # trim if sparse or if desired
     )
 
     with open(os.path.join(exp_name, "experiment_scripts", "stage_II.sh"), "w+") as f:

@@ -8,7 +8,7 @@ import scipy as sp
 from scipy.stats import nbinom
 import pandas
 
-from mutsigtools import  mutsig, models, analysis, plotting
+from mutsigtools import  mutsig
 
 
 def parse_args():
@@ -19,10 +19,11 @@ def parse_args():
     parser.add_argument('--save-dir', default='.')
     parser.add_argument('-s', '--seed', type=int, default=1)
     parser.add_argument('-n', '--num-samples', type=int, default=0)
+    parser.add_argument('--trim', action='store_true')
     parser.add_argument('--overdispersed', type=int, nargs = "*")
     parser.add_argument('--errorsig', type=int, nargs = "*")
     parser.add_argument('--negbin', type=float, nargs = "*")
-    parser.add_argument('--signatures', metavar='K', type=int, nargs='*', default=0)
+    parser.add_argument('--signatures', metavar='K', nargs='*', default=0)
     return parser.parse_args()
 
 def read_new_sigs(filename, sig_prefix):
@@ -62,38 +63,64 @@ def main():
         ref_sigs, ref_sig_names = read_new_sigs(args.signatures_file, args.signatures_prefix)
     ref_sigs[ref_sigs <= 0] = 1e-10
 
-    use_sig_inds = np.array(args.signatures) - 1
+    if args.signatures == 0:
+        use_sig_inds = np.arange(len(ref_sig_names))
+    elif args.signatures_file == "":
+        use_sig_inds = np.array(mutsig.pcawg2018_SBS_to_index(args.signatures)) - 1
+    else:
+        use_sig_inds = np.array(args.signatures) - 1
+
+    # trim minimal signatures
+    if args.trim:
+        new_use_sig_inds = []
+        normalized_loadings = loadings_array / np.sum(loadings_array, axis=0, keepdims=True)
+        for (k, sig) in zip(range(use_sig_inds.size), use_sig_inds):
+            if np.sum(normalized_loadings[k] > 0.1) > 0 or np.sum(loadings_array[k]) > 0.02 * np.sum(loadings_array):
+                new_use_sig_inds.append(sig)
+        use_sig_inds = np.array(new_use_sig_inds)
+
     num_sigs = use_sig_inds.size
     sigs = ref_sigs[use_sig_inds]
     sig_names = ref_sig_names[use_sig_inds]
+
     print('Using', ', '.join(sig_names))
 
     # generate synthetic data
     configs = [('correct', None)] + [('overdispersed', p) for p in args.overdispersed] + [('errorsig', p) for p in args.errorsig] + [('negbin', p) for p in args.negbin]
+
+    exp_list = ""
 
     for synth_type, param in configs:
         if synth_type == 'correct':
             counts = generate_overdispersed_counts(loadings_array, sigs,
                                                    concentration=np.inf,
                                                    seed=args.seed)    
+            exp_list = exp_list + str(args.seed) + "\n"
         elif synth_type == 'overdispersed':
             counts = generate_overdispersed_counts(loadings_array, sigs,
                                                    concentration=param,
                                                    seed=args.seed)
+            exp_list = exp_list + str(args.seed) + "-overdispersed-" + str(param) + "\n"
         elif synth_type == 'errorsig':
             counts = generate_counts_with_error_loading(
                 loadings_array, sigs, error_proportion=param/100.,
                 seed=args.seed)
+            exp_list = exp_list + str(args.seed) + "-errorsig-" + str(param) + "\n"
         elif synth_type == 'negbin':
             counts = generate_negbin_counts(loadings_array, sigs,
                                             overdispersion=param,
                                             seed=args.seed)
+            exp_list = exp_list + str(args.seed) + "-negbin-" + "{:.1f}\n".format(param)
         else:
             sys.exit('Invalid type')
         print(synth_type, param, np.mean(counts))
         output_file = output_file_template.format(
             '' if synth_type == 'correct' else '-{}-{}'.format(synth_type, param))
         pandas.DataFrame(counts).to_csv(output_file, sep = "\t")
+
+    exp_file = open(os.path.join(args.save_dir, "exp_list.txt"), "wt")
+    exp_file.write(exp_list)
+    exp_file.close()
 
 
 def generate_overdispersed_counts(loadings, sigs, concentration=1e5,
