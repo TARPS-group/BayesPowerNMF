@@ -331,7 +331,7 @@ def main():
         comp_sig_names = ['Sig {}'.format(i+1) for i in range(comp_sigs.shape[0])]
     else:
         if args.use_pcawg_2018:
-            comp_sigs, comp_sig_names = mutsig.pcawg2018_signatures('SBS-validated')
+            comp_sigs, comp_sig_names = mutsig.cosmic_signatures(subst_type = 'SBS', validated = True)
         else:
             comp_sigs, comp_sig_names = mutsig.cosmic_signatures()
 
@@ -343,8 +343,7 @@ def main():
         plotting.plot_loadings_matrix(msi.mean_loadings, msi.sig_names, sample_names, title=None,
                                       save_path=output_file_template.format('best-seed-loadings-zeta-{:.3f}.pdf'.format(zeta)))
         analysis.compare_signatures(
-            msi.mutsigs_samples.squeeze(), sig_names_with_mu(msi), comp_sigs, comp_sig_names,
-            top=2, save_path_base=output_file_template.format(
+            msi.mutsigs_samples.squeeze(), sig_names_with_mu(msi), comp_sigs, comp_sig_names, top=2, bipartite = True, save_path_base=output_file_template.format(
                 'best-seed-comparison-zeta-{:.3f}'.format(zeta)))
         plt.close('all')
 
@@ -358,15 +357,14 @@ def main():
                         file_path, verbose=False, name_prefix=name_prefix,
                         cutoff=CUTOFF, sample_start=0)[0]
                 analysis.compare_signatures(
-                    msi.mutsigs_samples.squeeze(), sig_names_with_mu(msi), comp_sigs, comp_sig_names,
-                    top=2, save_path_base=output_file_template.format(
+                    msi.mutsigs_samples.squeeze(), sig_names_with_mu(msi), comp_sigs, comp_sig_names, top=2, bipartite = True, save_path_base=output_file_template.format(
                         'comparison-zeta-{:.3f}-seed-{}'.format(zeta, seed)))
                 plt.close('all')
 
     ## Visualize signatures and data using PCA
     if len(args.signatures) > 0:
         if args.use_pcawg_2018:
-            cosmic_sigs, _ = mutsig.pcawg2018_signatures('SBS-validated')
+            cosmic_sigs, _ = mutsig.cosmic_signatures(subst_type = 'SBS-validated')
         else:
             cosmic_sigs, _ = mutsig.cosmic_signatures()
         use_sig_inds = np.array(args.signatures) - 1

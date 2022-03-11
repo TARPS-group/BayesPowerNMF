@@ -1,0 +1,32 @@
+Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+Exception: gamma_lpdf: Inverse scale parameter is 0, but must be > 0!  (in 'unknown file name' at line 27)
+
+If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+
+Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+Exception: gamma_lpdf: Inverse scale parameter is 0, but must be > 0!  (in 'unknown file name' at line 27)
+
+If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+
+Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+Exception: gamma_lpdf: Inverse scale parameter is 0, but must be > 0!  (in 'unknown file name' at line 27)
+
+If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+
+Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+Exception: gamma_lpdf: Inverse scale parameter is 0, but must be > 0!  (in 'unknown file name' at line 27)
+
+If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+
+WARNING:pystan:n_eff / iter below 0.001 indicates that the effective sample size has likely been overestimated
+WARNING:pystan:Rhat above 1.1 or below 0.9 indicates that the chains very likely have not mixed
+WARNING:pystan:4450 of 6000 iterations saturated the maximum tree depth of 12 (74.2 %)
+WARNING:pystan:Run again with max_treedepth larger than 12 to avoid saturation
+WARNING:pystan:Chain 1: E-BFMI = 0.000245
+WARNING:pystan:Chain 2: E-BFMI = 0.0126
+WARNING:pystan:Chain 4: E-BFMI = 0.0881
+WARNING:pystan:E-BFMI below 0.2 indicates you may need to reparameterize your model

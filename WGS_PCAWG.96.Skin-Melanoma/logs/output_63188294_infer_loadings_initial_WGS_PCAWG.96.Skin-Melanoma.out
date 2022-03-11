@@ -1,0 +1,101 @@
+python scripts/infer-loadings-only.py data/WGS_PCAWG.96.ready.tsv Skin-Melanoma  --signatures-prefix Signature --signatures 1 2 5 7a 7b 7c 7d 13 17a 17b 38 40 --save-dir WGS_PCAWG.96.Skin-Melanoma/synthetic_data --subst-type SBS -n 107 -a 0.00 --zeta 1    
+data/WGS_PCAWG.96.ready.tsv
+Using 107 samples
+Using SBS1, SBS2, SBS5, SBS7a, SBS7b, SBS7c, SBS7d, SBS13, SBS17a, SBS17b, SBS38, SBS40
+inferring loadings for 107 samples
+zeta = 1
+Using cached StanModel for normalized_joint_loadings_only
+a0: 1.030525913071621 b0: 835.9976451291856
+
+Gradient evaluation took 0 seconds
+1000 transitions using 10 leapfrog steps per transition would take 0 seconds.
+Adjust your expectations accordingly!
+
+
+
+Gradient evaluation took 0 seconds
+1000 transitions using 10 leapfrog steps per transition would take 0 seconds.
+Adjust your expectations accordingly!
+
+
+
+
+Gradient evaluation took 0 seconds
+1000 transitions using 10 leapfrog steps per transition would take 0 seconds.
+Adjust your expectations accordingly!
+
+
+Gradient evaluation took 0.01 seconds
+1000 transitions using 10 leapfrog steps per transition would take 100 seconds.
+Adjust your expectations accordingly!
+
+
+Iteration:    1 / 3000 [  0%]  (Warmup)
+Iteration:    1 / 3000 [  0%]  (Warmup)
+Iteration:    1 / 3000 [  0%]  (Warmup)
+Iteration:    1 / 3000 [  0%]  (Warmup)
+Iteration:  300 / 3000 [ 10%]  (Warmup)
+Iteration:  300 / 3000 [ 10%]  (Warmup)
+Iteration:  300 / 3000 [ 10%]  (Warmup)
+Iteration:  300 / 3000 [ 10%]  (Warmup)
+Iteration:  600 / 3000 [ 20%]  (Warmup)
+Iteration:  600 / 3000 [ 20%]  (Warmup)
+Iteration:  600 / 3000 [ 20%]  (Warmup)
+Iteration:  600 / 3000 [ 20%]  (Warmup)
+Iteration:  900 / 3000 [ 30%]  (Warmup)
+Iteration:  900 / 3000 [ 30%]  (Warmup)
+Iteration:  900 / 3000 [ 30%]  (Warmup)
+Iteration: 1200 / 3000 [ 40%]  (Warmup)
+Iteration: 1200 / 3000 [ 40%]  (Warmup)
+Iteration: 1200 / 3000 [ 40%]  (Warmup)
+Iteration:  900 / 3000 [ 30%]  (Warmup)
+Iteration: 1500 / 3000 [ 50%]  (Warmup)
+Iteration: 1501 / 3000 [ 50%]  (Sampling)
+Iteration: 1500 / 3000 [ 50%]  (Warmup)
+Iteration: 1501 / 3000 [ 50%]  (Sampling)
+Iteration: 1800 / 3000 [ 60%]  (Sampling)
+Iteration: 1500 / 3000 [ 50%]  (Warmup)
+Iteration: 1501 / 3000 [ 50%]  (Sampling)
+Iteration: 1800 / 3000 [ 60%]  (Sampling)
+Iteration: 2100 / 3000 [ 70%]  (Sampling)
+Iteration: 2100 / 3000 [ 70%]  (Sampling)
+Iteration: 1200 / 3000 [ 40%]  (Warmup)
+Iteration: 2400 / 3000 [ 80%]  (Sampling)
+Iteration: 1500 / 3000 [ 50%]  (Warmup)
+Iteration: 1501 / 3000 [ 50%]  (Sampling)
+Iteration: 1800 / 3000 [ 60%]  (Sampling)
+Iteration: 2100 / 3000 [ 70%]  (Sampling)
+Iteration: 2400 / 3000 [ 80%]  (Sampling)
+Iteration: 1800 / 3000 [ 60%]  (Sampling)
+Iteration: 2700 / 3000 [ 90%]  (Sampling)
+Iteration: 2700 / 3000 [ 90%]  (Sampling)
+Iteration: 2400 / 3000 [ 80%]  (Sampling)
+Iteration: 3000 / 3000 [100%]  (Sampling)
+
+ Elapsed Time: 1568.99 seconds (Warm-up)
+               6075.27 seconds (Sampling)
+               7644.26 seconds (Total)
+
+Iteration: 2100 / 3000 [ 70%]  (Sampling)
+Iteration: 3000 / 3000 [100%]  (Sampling)
+
+ Elapsed Time: 562.32 seconds (Warm-up)
+               8029.37 seconds (Sampling)
+               8591.69 seconds (Total)
+
+Iteration: 2700 / 3000 [ 90%]  (Sampling)
+Iteration: 2400 / 3000 [ 80%]  (Sampling)
+Iteration: 3000 / 3000 [100%]  (Sampling)
+
+ Elapsed Time: 688.67 seconds (Warm-up)
+               13175.6 seconds (Sampling)
+               13864.3 seconds (Total)
+
+Iteration: 2700 / 3000 [ 90%]  (Sampling)
+Iteration: 3000 / 3000 [100%]  (Sampling)
+
+ Elapsed Time: 548.75 seconds (Warm-up)
+               22973.2 seconds (Sampling)
+               23522 seconds (Total)
+
+max loadings: [ 16.  17.  99.  14.  16.  66.  14.  13.  26. 100.  14. 100.]

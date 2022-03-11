@@ -1,0 +1,1 @@
+python scripts/infer-loadings-nnls.py data/WGS_PCAWG.96.ready.tsv Ovary-AdenoCA  --signatures-prefix Signature --signatures 1 2 3 5 8 13 18 26 35 39 40 41 --save-dir WGS_PCAWG.96.Ovary-AdenoCA/synthetic_data --subst-type SBS -n 113 

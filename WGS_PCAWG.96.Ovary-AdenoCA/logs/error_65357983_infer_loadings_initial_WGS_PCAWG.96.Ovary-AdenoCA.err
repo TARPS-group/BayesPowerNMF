@@ -1,0 +1,7 @@
+usage: infer-loadings-nnls.py [-h] [--signatures-file SIGNATURES_FILE]
+                              [--signatures-prefix SIGNATURES_PREFIX]
+                              [--signatures [K ...]] [--save-dir SAVE_DIR]
+                              [--subst-type {SBS,DBS,INDEL}] [-n NUM_SAMPLES]
+                              [--plain]
+                              data filter
+infer-loadings-nnls.py: error: unrecognized arguments: OPTS

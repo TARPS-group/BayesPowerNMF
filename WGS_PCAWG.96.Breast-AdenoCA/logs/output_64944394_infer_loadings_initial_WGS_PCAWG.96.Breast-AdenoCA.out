@@ -1,0 +1,6 @@
+python scripts/infer-loadings-only.py data/WGS_PCAWG.96.ready.tsv Breast-AdenoCA  --signatures-prefix Signature --signatures 1 2 3 5 8 9 13 17a 17b 18 37 40 41 --save-dir WGS_PCAWG.96.Breast-AdenoCA/synthetic_data --subst-type SBS -n 198 -a 0.00 --zeta 1    
+data/WGS_PCAWG.96.ready.tsv
+Using 198 samples
+Using SBS1, SBS2, SBS3, SBS5, SBS8, SBS9, SBS13, SBS17a, SBS17b, SBS18, SBS37, SBS40, SBS41
+inferring loadings for 198 samples
+zeta = 1

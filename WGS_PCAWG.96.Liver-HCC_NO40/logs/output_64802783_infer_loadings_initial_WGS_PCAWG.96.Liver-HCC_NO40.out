@@ -1,0 +1,40 @@
+python scripts/infer-loadings-only.py data/WGS_PCAWG.96.ready.tsv Liver-HCC  --signatures-prefix Signature --signatures 1 4 5 6 9 12 14 16 17a 17b 18 19 22 24 26 28 29 30 31 35 --save-dir WGS_PCAWG.96.Liver-HCC_NO40/synthetic_data --subst-type SBS -n 326 -a 0.00 --zeta 1    
+data/WGS_PCAWG.96.ready.tsv
+Using 326 samples
+Using SBS1, SBS4, SBS5, SBS6, SBS9, SBS12, SBS14, SBS16, SBS17a, SBS17b, SBS18, SBS19, SBS22, SBS24, SBS26, SBS28, SBS29, SBS30, SBS31, SBS35
+inferring loadings for 326 samples
+zeta = 1
+Using cached StanModel for normalized_joint_loadings_only
+a0: 1.5370293395234382 b0: 199.7057485463916
+
+
+Gradient evaluation took 0.03 seconds
+Gradient evaluation took 0.03 seconds
+1000 transitions using 10 leapfrog steps per transition would take 300 seconds.
+1000 transitions using 10 leapfrog steps per transition would take 300 seconds.
+Adjust your expectations accordingly!
+Adjust your expectations accordingly!
+
+
+
+
+
+
+Gradient evaluation took 0.03 seconds
+Gradient evaluation took 0.03 seconds
+1000 transitions using 10 leapfrog steps per transition would take 300 seconds.
+Adjust your expectations accordingly!
+1000 transitions using 10 leapfrog steps per transition would take 300 seconds.
+Adjust your expectations accordingly!
+
+
+
+
+Iteration:    1 / 3000 [  0%]  (Warmup)
+Iteration:    1 / 3000 [  0%]  (Warmup)
+Iteration:    1 / 3000 [  0%]  (Warmup)
+Iteration:    1 / 3000 [  0%]  (Warmup)
+Iteration:  300 / 3000 [ 10%]  (Warmup)
+Iteration:  300 / 3000 [ 10%]  (Warmup)
+Iteration:  300 / 3000 [ 10%]  (Warmup)
+Iteration:  300 / 3000 [ 10%]  (Warmup)

@@ -1,0 +1,8 @@
+python scripts/generate-synthetic-data.py synthetic-107-skin-melanoma-1-2-5-7a-7b-7c-7d-13-17a-17b-38-40  --signatures-prefix Signature --signatures 1 2 5 7a 7b 7c 7d 13 17a 17b 38 40 --save-dir WGS_PCAWG.96.Skin-Melanoma/synthetic_data -s 1 -n 107 --perturbed 0.01 0.02 --overdispersed 2 --contamination 1 5 --trim
+Using SBS5, SBS7c, SBS7d, SBS17b, SBS38, SBS40
+correct None 1064.2402647975077
+perturbed 0.01 1064.866238317757
+perturbed 0.02 1064.6602414330218
+contamination 1 1064.3990459501558
+contamination 5 1064.41238317757
+overdispersed 2.0 1064.1794197819315

@@ -1,0 +1,8 @@
+python scripts/generate-synthetic-data.py synthetic-326-liver-hcc-1-4-5-6-9-12-14-16-17a-17b-18-19-22-24-26-28-29-30-31-35-40  --signatures-prefix Signature --signatures 1 4 5 6 9 12 14 16 17a 17b 18 19 22 24 26 28 29 30 31 35 40 --save-dir WGS_PCAWG.96.Liver-HCC/synthetic_data -s 1 -n 326 --perturbed 0.01 0.02 --overdispersed 2 --contamination 1 5 --trim
+Using SBS1, SBS4, SBS5, SBS6, SBS12, SBS16, SBS18, SBS19, SBS22, SBS24, SBS26, SBS29, SBS30, SBS31, SBS35, SBS40
+correct None 123.23603655419222
+perturbed 0.01 123.21213573619632
+perturbed 0.02 123.08940439672801
+contamination 1 123.17963957055214
+contamination 5 123.33579371165644
+overdispersed 2.0 123.32151073619632

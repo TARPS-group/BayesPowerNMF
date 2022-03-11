@@ -1,0 +1,8 @@
+python scripts/generate-synthetic-data.py synthetic-198-breast-adenoca-1-2-3-5-8-9-13-17a-17b-18-37-41  --signatures-prefix Signature --signatures 1 2 3 5 8 9 13 17a 17b 18 37 41 --save-dir WGS_PCAWG.96.Breast-AdenoCA_NO40/synthetic_data -s 1 -n 198 --perturbed 0.01 0.02 --overdispersed 2 --contamination 1 5 --trim
+Using SBS1, SBS2, SBS3, SBS5, SBS8, SBS9, SBS13, SBS17b, SBS18, SBS37, SBS41
+correct None 74.00636574074075
+perturbed 0.01 73.93818392255892
+perturbed 0.02 73.94854797979798
+contamination 1 73.98284932659932
+contamination 5 74.01425715488216
+overdispersed 2.0 73.8632680976431

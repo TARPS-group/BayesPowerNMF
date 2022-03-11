@@ -1,0 +1,6 @@
+python scripts/infer-loadings-only.py data/WGS_PCAWG.96.ready.Lung-AdenoCA.tsv Lung-AdenoCA  --signatures-prefix Signature --signatures 1 2 3 4 5 9 13 17a 17b 18 28 --save-dir WGS_PCAWG.96.ready.Lung-AdenoCA_NO40/synthetic_data --subst-type SBS -n 38 -a 0.00 --zeta 1    
+data/WGS_PCAWG.96.ready.Lung-AdenoCA.tsv
+Using 38 samples
+Using SBS1, SBS2, SBS3, SBS4, SBS5, SBS9, SBS13, SBS17a, SBS17b, SBS18, SBS28
+inferring loadings for 38 samples
+zeta = 1

@@ -1,0 +1,3 @@
+python scripts/infer-loadings-only.py data/WGS_PCAWG.96.ready.tsv Skin-Melanoma  --signatures-prefix Signature --signatures  --save-dir sparse.WGS_PCAWG.96.Skin-Melanoma/synthetic_data --subst-type SBS -n 107 -a 0.00 --zeta 1    --sparse 
+data/WGS_PCAWG.96.ready.tsv
+Using 107 samples

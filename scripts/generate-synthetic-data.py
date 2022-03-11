@@ -8,7 +8,7 @@ import scipy as sp
 from scipy.stats import nbinom
 import pandas
 
-from mutsigtools import  mutsig
+from mutsigtools import mutsig
 
 
 def parse_args():
@@ -16,14 +16,14 @@ def parse_args():
     parser.add_argument('prefix')
     parser.add_argument('--signatures-file', default="")
     parser.add_argument('--signatures-prefix', default="Signature")
+    parser.add_argument('--signatures', metavar='K', nargs='*', default=0)
     parser.add_argument('--save-dir', default='.')
     parser.add_argument('-s', '--seed', type=int, default=1)
     parser.add_argument('-n', '--num-samples', type=int, default=0)
+    parser.add_argument('--perturbed', type=float, nargs = "*")
+    parser.add_argument('--contamination', type=int, nargs = "*")
+    parser.add_argument('--overdispersed', type=float, nargs = "*")
     parser.add_argument('--trim', action='store_true')
-    parser.add_argument('--overdispersed', type=int, nargs = "*")
-    parser.add_argument('--errorsig', type=int, nargs = "*")
-    parser.add_argument('--negbin', type=float, nargs = "*")
-    parser.add_argument('--signatures', metavar='K', nargs='*', default=0)
     return parser.parse_args()
 
 def read_new_sigs(filename, sig_prefix):
@@ -66,18 +66,21 @@ def main():
     if args.signatures == 0:
         use_sig_inds = np.arange(len(ref_sig_names))
     elif args.signatures_file == "":
-        use_sig_inds = np.array(mutsig.pcawg2018_SBS_to_index(args.signatures)) - 1
+        use_sig_inds = np.array(mutsig.cosmic_v3_SBS_to_index(args.signatures)) - 1
     else:
         use_sig_inds = np.array(args.signatures) - 1
 
     # trim minimal signatures
     if args.trim:
         new_use_sig_inds = []
+        new_k = []
         normalized_loadings = loadings_array / np.sum(loadings_array, axis=0, keepdims=True)
         for (k, sig) in zip(range(use_sig_inds.size), use_sig_inds):
             if np.sum(normalized_loadings[k] > 0.1) > 0 or np.sum(loadings_array[k]) > 0.02 * np.sum(loadings_array):
                 new_use_sig_inds.append(sig)
+                new_k.append(k)
         use_sig_inds = np.array(new_use_sig_inds)
+        loadings_array = loadings_array[new_k]
 
     num_sigs = use_sig_inds.size
     sigs = ref_sigs[use_sig_inds]
@@ -86,31 +89,31 @@ def main():
     print('Using', ', '.join(sig_names))
 
     # generate synthetic data
-    configs = [('correct', None)] + [('overdispersed', p) for p in args.overdispersed] + [('errorsig', p) for p in args.errorsig] + [('negbin', p) for p in args.negbin]
+    configs = [('correct', None)] + [('perturbed', p) for p in args.perturbed] + [('contamination', p) for p in args.contamination] + [('overdispersed', p) for p in args.overdispersed]
 
     exp_list = ""
 
     for synth_type, param in configs:
         if synth_type == 'correct':
-            counts = generate_overdispersed_counts(loadings_array, sigs,
-                                                   concentration=np.inf,
-                                                   seed=args.seed)    
+            counts = generate_perturbed_counts(loadings_array, sigs,
+                                               mean_error=np.inf,
+                                               seed=args.seed)    
             exp_list = exp_list + str(args.seed) + "\n"
-        elif synth_type == 'overdispersed':
-            counts = generate_overdispersed_counts(loadings_array, sigs,
-                                                   concentration=param,
-                                                   seed=args.seed)
-            exp_list = exp_list + str(args.seed) + "-overdispersed-" + str(param) + "\n"
-        elif synth_type == 'errorsig':
+        elif synth_type == 'perturbed':
+            counts = generate_perturbed_counts(loadings_array, sigs,
+                                               mean_error=param,
+                                               seed=args.seed)
+            exp_list = exp_list + str(args.seed) + "-perturbed-" + str(param) + "\n"
+        elif synth_type == 'contamination':
             counts = generate_counts_with_error_loading(
                 loadings_array, sigs, error_proportion=param/100.,
                 seed=args.seed)
-            exp_list = exp_list + str(args.seed) + "-errorsig-" + str(param) + "\n"
-        elif synth_type == 'negbin':
-            counts = generate_negbin_counts(loadings_array, sigs,
-                                            overdispersion=param,
-                                            seed=args.seed)
-            exp_list = exp_list + str(args.seed) + "-negbin-" + "{:.1f}\n".format(param)
+            exp_list = exp_list + str(args.seed) + "-contamination-" + str(param) + "\n"
+        elif synth_type == 'overdispersed':
+            counts = generate_overdispersed_counts(loadings_array, sigs,
+                                                   overdispersion=param,
+                                                   seed=args.seed)
+            exp_list = exp_list + str(args.seed) + "-overdispersed-" + "{:.1f}\n".format(param)
         else:
             sys.exit('Invalid type')
         print(synth_type, param, np.mean(counts))
@@ -123,25 +126,31 @@ def main():
     exp_file.close()
 
 
-def generate_overdispersed_counts(loadings, sigs, concentration=1e5,
-                                  seed=30192):
+def generate_perturbed_counts(loadings, sigs, mean_error=0.02,
+                              seed=30192):
     np.random.seed(seed)
-    if concentration == np.inf:
+    if mean_error == np.inf:
         counts = np.random.poisson(loadings.T.dot(sigs))
     else:
+        # log (mean error / sparsity) = 3.6651 - 0.9822 log (concentration)
+        # sparsity = 1 / (I * ||sig||^2)
         K, J = loadings.shape
         K, I = sigs.shape
+        sparsity = 1 / (I * np.linalg.norm(sigs, axis = 1) ** 2)
+        concentration = np.exp( (3.6651 - np.log (mean_error / sparsity)) / 0.9822 )
+        # print(sparsity)
+        # print(concentration)
         counts = np.zeros((J, I), dtype=int)
         for j, loading in enumerate(loadings.T):
             rand_sigs = np.zeros_like(sigs)
             for k, sig in enumerate(sigs):
-                rand_sigs[k] = np.random.dirichlet(concentration*sig)
+                rand_sigs[k] = np.random.dirichlet(concentration[k]*sig)
             counts[j]  = np.random.poisson(loading.dot(rand_sigs))
     return counts.T
 
 
-def generate_negbin_counts(loadings, sigs, overdispersion=2,
-                             seed=30192):
+def generate_overdispersed_counts(loadings, sigs, overdispersion=2,
+                                  seed=30192):
     np.random.seed(seed)
     if overdispersion < 1:
         raise ValueError('overdispersion must be at least 1')

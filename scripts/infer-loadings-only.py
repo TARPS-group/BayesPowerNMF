@@ -22,20 +22,20 @@ def parse_args():
     parser.add_argument('filter')
     parser.add_argument('--signatures-file', default="")
     parser.add_argument('--signatures-prefix', default="Signature")
+    parser.add_argument('--signatures', metavar='K', nargs='*', default=0)
     parser.add_argument('--save-dir', default='.')
+    parser.add_argument('--subst-type', default='SBS', choices=['SBS', 'DBS', 'INDEL'])
     parser.add_argument('-n', '--num-samples', type=int, default=0)
     parser.add_argument('-a', type=float, default=0)
     parser.add_argument('--zeta', type=float, default=1)
+    parser.add_argument('--prob-zero', type=float, default=None)
+    parser.add_argument('--q1', type=float, default=None)
+    parser.add_argument('--q99', type=float, default=None)
+    parser.add_argument('--sparse', action='store_true')
     parser.add_argument('--iters', type=int, default=None)
     parser.add_argument('--median', action='store_true')
     parser.add_argument('--MAP', action='store_true')
     parser.add_argument('--plain', action='store_true')
-    parser.add_argument('--sparse', action='store_true')
-    parser.add_argument('--prob-zero', type=float, default=None)
-    parser.add_argument('--quantile1', type=float, default=None)
-    parser.add_argument('--quantile99', type=float, default=None)
-    parser.add_argument('--subst-type', default='SBS', choices=['SBS', 'DBS', 'INDEL'])
-    parser.add_argument('--signatures', metavar='K', nargs='*', default=0)
     return parser.parse_args()
 
 
@@ -71,6 +71,10 @@ def main():
     num_samples = min(max_samples, len(sample_names))
     print('Using', num_samples, 'samples')
     Xs = { sample_names[i] : filtered_data[:,i] for i in range(num_samples) }
+
+    # save copy of original counts
+    counts_file = os.path.join(args.save_dir, args.filter + "_original_counts.tsv")
+    filtered_df.to_csv(counts_file, sep = "\t")
     
     # construct filenames and descriptions
     if args.signatures == 0:
@@ -91,7 +95,7 @@ def main():
     
     # load signatures
     if args.signatures_file == "":
-        ref_sigs, ref_sig_names = mutsig.cosmic_signatures(subst_type = args.subst_type)
+        ref_sigs, ref_sig_names = mutsig.cosmic_signatures(subst_type = args.subst_type, validated = True)
     else:
         ref_sigs, ref_sig_names = read_new_sigs(args.signatures_file, args.signatures_prefix)
     ref_sigs[ref_sigs <= 0] = 1e-10
@@ -99,7 +103,7 @@ def main():
     if args.signatures == 0:
         use_sig_inds = np.arange(len(ref_sig_names))
     elif args.signatures_file == "":
-        use_sig_inds = np.array(mutsig.pcawg2018_SBS_to_index(args.signatures)) - 1
+        use_sig_inds = np.array(mutsig.cosmic_v3_SBS_to_index(args.signatures)) - 1
     else:
         use_sig_inds = np.array(args.signatures) - 1
     
@@ -121,15 +125,16 @@ def main():
     
     if args.sparse is True:
         p = args.prob_zero or 0.75
-        l99 = args.quantile99 or np.mean(pd.DataFrame.from_dict(Xs).values.astype("int").sum(axis = 0)) / 2
+        l99 = args.q99 or np.mean(pd.DataFrame.from_dict(Xs).values.astype("int").sum(axis = 0)) / 2
         kwargs['a0'], kwargs['b0'] = models.set_prior_hyperparameters(p, l99)
     else:
         lst = np.sort(pd.DataFrame.from_dict(Xs).values.astype("int").sum(axis = 0))
-        l1 = args.quantile1 or lst[0] / len(sigs)
-        l99 = args.quantile99 or lst[-1] / len(sigs)
+        l1 = args.q1 or lst[0] / len(sigs)
+        l99 = args.q99 or np.mean(pd.DataFrame.from_dict(Xs).values.astype("int").sum(axis = 0)) / 2
         kwargs['a0'], kwargs['b0'] = models.set_prior_hyperparameters(l1, l99, False)
     
     fits = models.infer_loadings(sigs, sig_names, Xs, **kwargs)
+    print(fits)
     
     point_est = np.median if args.median else np.mean
     loadings_array = point_est(fits['theta'], 0)

@@ -5,12 +5,13 @@ import argparse
 import os
 import sys
 
-INFER_LOADINGS_TEMPLATE = """#!/usr/bin/bash
+INFER_LOADINGS_TEMPLATE = """#!/bin/bash
+
 #SBATCH -c 4
 #SBATCH --job-name {jobname} 
-#SBATCH -t 0-12:00 
+#SBATCH -t 0-02:00 
 #SBATCH -p {queue}
-#SBATCH --mem=32G 
+#SBATCH --mem=64G 
 #SBATCH -o {log_dir}/output_%j_{jobname}.out 
 #SBATCH -e {log_dir}/error_%j_{jobname}.err 
 
@@ -19,15 +20,27 @@ module load gcc/8.2.0-fasrc01 python/3.8.5-fasrc01
 eval "$(conda shell.bash hook)"
 conda activate {conda_env}
 
+DATA={data}
+FILTER="{filter}"
+SIGS_FILE="{sigs_file}"
+SIGS_PREFIX="{sigs_prefix}"
+SIGNATURES="{signatures}"
+SAVE_DIR={save_dir}
+SUB_TYPE={subst_type}
+N={num_samples}
+OPTS="{opts}"
+
 cd {BPS_dir}
-python scripts/infer-loadings-only.py {data} {filter} {signatures_cond}--signatures-prefix {signatures_prefix} --save-dir {save_dir} -n {num_samples} --subst-type {subst_type} --signatures {signatures} -a {a:.2f} --zeta {zeta} {opts}
+echo "python scripts/infer-loadings-nnls.py $DATA $FILTER $SIGS_FILE --signatures-prefix $SIGS_PREFIX --signatures $SIGNATURES --save-dir $SAVE_DIR --subst-type $SUB_TYPE -n $N $OPTS"
+python scripts/infer-loadings-nnls.py $DATA $FILTER $SIGS_FILE --signatures-prefix $SIGS_PREFIX --signatures $SIGNATURES --save-dir $SAVE_DIR --subst-type $SUB_TYPE -n $N $OPTS
 """
 
-GENERATE_SYNTHETIC_TEMPLATE = """#!/usr/bin/bash
+GENERATE_SYNTHETIC_TEMPLATE = """#!/bin/bash
+
 #SBATCH --job-name {jobname} 
 #SBATCH -t 0-01:00 
 #SBATCH -p {queue}
-#SBATCH --mem=32G 
+#SBATCH --mem=16G 
 #SBATCH -o {log_dir}/output_%j_{jobname}.out 
 #SBATCH -e {log_dir}/error_%j_{jobname}.err 
 
@@ -36,15 +49,29 @@ module load gcc/8.2.0-fasrc01 python/3.8.5-fasrc01
 eval "$(conda shell.bash hook)"
 conda activate {conda_env}
 
+NEW_PREFIX={new_prefix}
+SIGS_FILE="{sigs_file}"
+SIGS_PREFIX="{sigs_prefix}"
+SIGNATURES="{signatures}"
+SAVE_DIR={save_dir}
+S={seed}
+N={num_samples}
+PERTURBED="{perturbed}"
+OVERDISPERSED="{overdispersed}"
+CONTAMINATION="{contamination}"
+OPTS="{trim}"
+
 cd {BPS_dir}
-python scripts/generate-synthetic-data.py {new_prefix} {signatures_cond}--signatures-prefix {signatures_prefix} --save-dir {save_dir} -s {seed} -n {num_samples} --overdispersed {overdispersed} --negbin {negbin} --errorsig {errorsig} --signatures {signatures} {sparse}
+echo "python scripts/generate-synthetic-data.py $NEW_PREFIX $SIGS_FILE --signatures-prefix $SIGS_PREFIX --signatures $SIGNATURES --save-dir $SAVE_DIR -s $S -n $N $PERTURBED $OVERDISPERSED $CONTAMINATION $OPTS"
+python scripts/generate-synthetic-data.py $NEW_PREFIX $SIGS_FILE --signatures-prefix $SIGS_PREFIX --signatures $SIGNATURES --save-dir $SAVE_DIR -s $S -n $N $PERTURBED $OVERDISPERSED $CONTAMINATION $OPTS
 """
 
 INFER_LOADINGS_AND_SIGS_TEMPLATE = """#!/bin/bash
+
 #SBATCH --job-name {jobname} 
-#SBATCH -t 2-00:00 
+#SBATCH -t 7-00:00 
 #SBATCH -p {queue}
-#SBATCH --mem=32G 
+#SBATCH --mem=64G 
 #SBATCH -o {log_dir}/output_%j_{jobname}.out 
 #SBATCH -e {log_dir}/error_%j_{jobname}.err  
 
@@ -83,16 +110,12 @@ do
 done
 """
 
-SUBMIT_MISSING_JOINT = """#!/bin/bash
-
-
-""" 
-
 MAKE_PLOTS_TEMPLATE = """#!/bin/bash
+
 #SBATCH --job-name {jobname} 
 #SBATCH -t 0-06:00 
 #SBATCH -p {queue}
-#SBATCH --mem=32G 
+#SBATCH --mem=64G 
 #SBATCH -o {log_dir}/output_%j_{jobname}.out 
 #SBATCH -e {log_dir}/error_%j_{jobname}.err 
 
@@ -136,7 +159,7 @@ def main():
     os.makedirs(exp_name, exist_ok = True)
     os.makedirs(exp.get("log_dir"), exist_ok = True)
     os.makedirs(os.path.join(exp_name, "experiment_scripts"), exist_ok = True)
-    os.makedirs(os.path.join(exp_name, "experiment_scripts", "helper"), exist_ok = True)
+    # os.makedirs(os.path.join(exp_name, "experiment_scripts", "helper"), exist_ok = True)
     os.makedirs(os.path.join(exp_name, "synthetic_data"), exist_ok = True)
     os.makedirs(os.path.join(exp_name, "results"), exist_ok = True)
     os.makedirs(os.path.join(exp_name, "figures"), exist_ok = True)
@@ -151,17 +174,17 @@ def main():
         BPS_dir = wd,
         data = exp.get("data"),
         filter = exp.get("sample_prefixes"),
-        signatures_cond = "" if exp.get("signatures_file") == "" else "--signatures-file {} ".format(exp.get("signatures_file")),
-        signatures_prefix = exp.get("signatures_prefix"),
-        save_dir = os.path.join(exp_name, "synthetic_data"),
-        num_samples = exp.get("num_samples"),
-        subst_type = exp.get("subst_type"),
+        sigs_file = "" if exp.get("signatures_file") == "" else "--signatures-file {}".format(exp.get("signatures_file")),
+        sigs_prefix = exp.get("signatures_prefix"),
         signatures = exp.get("putative_sigs"),
+        save_dir = os.path.join(exp_name, "synthetic_data"),
+        subst_type = exp.get("subst_type"),
+        num_samples = exp.get("num_samples"),
         a = exp.getfloat("a_init"),
         zeta = exp.get("loadings_inference_power"),
-        p0 = exp.get("p_sigs_zero_init"),
-        l1 = exp.get("loadings_quantile_1_init"),
-        l99 = exp.get("loadings_quantile_99_init"),
+        p0 = ("" if exp.get("p_sigs_zero_init") == "" else "--prob-zero {}".format(exp.get("p_sigs_zero_init"))),
+        q1 = ("" if exp.get("loadings_quantile_1_init") == "" else "--q1 {}".format(exp.get("loadings_quantile_1_init"))),
+        q99 = ("" if exp.get("loadings_quantile_99_init") == "" else "--q99 {}".format(exp.get("loadings_quantile_99_init"))),
         opts = ("" if exp.getboolean("sparse_init") is False else "--sparse ") + ("" if exp.getboolean("median") is False else "--median ") + ("" if exp.getboolean("MAP") is False else "--MAP ") + ("" if exp.get("iters") == "" else "--iters {} ".format(exp.get("iters")))
     )
 
@@ -190,22 +213,22 @@ def main():
         conda_env = exp.get("conda_env"),
         BPS_dir = wd,
         new_prefix = synthetic_prefix,
-        signatures_cond = "" if exp.get("signatures_file") == "" else "--signatures-file {} ".format(exp.get("signatures_file")),
-        signatures_prefix = exp.get("signatures_prefix"),
+        sigs_file = "" if exp.get("signatures_file") == "" else "--signatures-file {}".format(exp.get("signatures_file")),
+        sigs_prefix = exp.get("signatures_prefix"),
+        signatures = exp.get("putative_sigs"),
         save_dir = os.path.join(exp_name, "synthetic_data"),
         seed = seed,
         num_samples = exp.get("num_samples"),
-        overdispersed = exp.get("overdispersed"),
-        negbin = exp.get("negbin"),
-        errorsig = exp.get("error_sig"),
-        signatures = exp.get("putative_sigs"),
-        sparse = "" if (exp.getboolean("sparse_init") or exp.getboolean("trim_sigs")) else "--trim" # trim if sparse or if desired
+        perturbed = "" if exp.get("perturbed") == "" else "--perturbed {}".format(exp.get("perturbed")),
+        overdispersed = "" if exp.get("overdispersed") == "" else "--overdispersed {}".format(exp.get("overdispersed")),
+        contamination = "" if exp.get("contamination") == "" else "--contamination {}".format(exp.get("contamination")),
+        trim = "" if (exp.getboolean("sparse_init") or exp.getboolean("trim_sigs")) else "--trim" # trim if sparse or if desired
     )
 
     with open(os.path.join(exp_name, "experiment_scripts", "stage_II.sh"), "w+") as f:
         f.writelines(stage_II_content)
 
-    synthetic_experiments = [seed] + ["{}-negbin-{}".format(seed, p) for p in map(float, exp.get("negbin").split())] + ["{}-errorsig-{}".format(seed, p) for p in exp.get("error_sig").split()] + ["{}-overdispersed-{}".format(seed, p) for p in exp.get("overdispersed").split()]
+    synthetic_experiments = [seed] + ["{}-overdispersed-{}".format(seed, p) for p in map(float, exp.get("overdispersed").split())] + ["{}-contamination-{}".format(seed, p) for p in exp.get("contamination").split()] + ["{}-perturbed-{}".format(seed, p) for p in exp.get("perturbed").split()]
     synthetic_data_files = ["{}-seed-{}.tsv".format(synthetic_prefix, se) for se in synthetic_experiments]
 
     ### Stage IIIa

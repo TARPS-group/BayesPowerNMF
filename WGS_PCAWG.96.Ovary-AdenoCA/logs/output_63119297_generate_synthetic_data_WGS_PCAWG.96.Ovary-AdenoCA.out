@@ -1,0 +1,8 @@
+python scripts/generate-synthetic-data.py synthetic-113-ovary-adenoca-1-2-3-5-8-13-18-26-35-39-40-41  --signatures-prefix Signature --signatures 1 2 3 5 8 13 18 26 35 39 40 41 --save-dir WGS_PCAWG.96.Ovary-AdenoCA/synthetic_data -s 1 -n 113 --perturbed 0.01 0.02 --overdispersed 2 --contamination 1 5 --trim
+Using SBS3, SBS5, SBS8, SBS26, SBS39, SBS41
+correct None 87.59937315634218
+perturbed 0.01 87.59033923303835
+perturbed 0.02 87.60425884955752
+contamination 1 87.5987278761062
+contamination 5 87.53300147492625
+overdispersed 2.0 87.54249631268436

@@ -1,0 +1,6 @@
+python scripts/infer-loadings-nnls.py data/WGS_PCAWG.96.ready.tsv Skin-Melanoma  --signatures-prefix Signature --signatures 1 2 5 7a 7b 7c 7d 13 17a 17b 38 40 --save-dir WGS_PCAWG.96.Skin-Melanoma/synthetic_data --subst-type SBS -n 107 
+data/WGS_PCAWG.96.ready.tsv
+Using 107 samples
+Using SBS1, SBS2, SBS5, SBS7a, SBS7b, SBS7c, SBS7d, SBS13, SBS17a, SBS17b, SBS38, SBS40
+Warning: some signatures do not have substantial loadings attributed to them: SBS2, SBS13, SBS17a
+max loadings: [12.  9. 38. 89. 55. 11. 17.  9.  5. 27. 44. 72.]

@@ -1,0 +1,36 @@
+python scripts/infer-loadings-only.py data/WGS_PCAWG.96.ready.tsv Liver-HCC  --signatures-prefix Signature --signatures  --save-dir sparse.WGS_PCAWG.96.Liver-HCC/synthetic_data --subst-type SBS -n 326 -a 0.00 --zeta 1    --sparse 
+data/WGS_PCAWG.96.ready.tsv
+Using 326 samples
+Using SBS1, SBS2, SBS3, SBS4, SBS5, SBS6, SBS7a, SBS7b, SBS7c, SBS7d, SBS8, SBS9, SBS10a, SBS10b, SBS10c, SBS10d, SBS11, SBS12, SBS13, SBS14, SBS15, SBS16, SBS17a, SBS17b, SBS18, SBS19, SBS20, SBS21, SBS22, SBS23, SBS24, SBS25, SBS26, SBS27, SBS28, SBS29, SBS30, SBS31, SBS32, SBS33, SBS34, SBS35, SBS36, SBS37, SBS38, SBS39, SBS40, SBS41, SBS42, SBS43, SBS44, SBS45, SBS46, SBS47, SBS48, SBS49, SBS50, SBS51, SBS52, SBS53, SBS54, SBS55, SBS56, SBS57, SBS58, SBS59, SBS60, SBS84, SBS85, SBS86, SBS87, SBS88
+inferring loadings for 326 samples
+zeta = 1
+Using cached StanModel for normalized_joint_loadings_only
+a0: 0.3704019435770102 b0: 0.017479422927631823
+
+
+
+
+Gradient evaluation took 0.25 seconds
+1000 transitions using 10 leapfrog steps per transition would take 2500 seconds.
+Adjust your expectations accordingly!
+
+
+Gradient evaluation took 0.25 seconds
+Gradient evaluation took 0.24 seconds
+Gradient evaluation took 0.23 seconds
+1000 transitions using 10 leapfrog steps per transition would take 2500 seconds.
+Adjust your expectations accordingly!
+
+
+1000 transitions using 10 leapfrog steps per transition would take 2400 seconds.
+Adjust your expectations accordingly!
+1000 transitions using 10 leapfrog steps per transition would take 2300 seconds.
+
+Adjust your expectations accordingly!
+
+
+
+Iteration:    1 / 3000 [  0%]  (Warmup)
+Iteration:    1 / 3000 [  0%]  (Warmup)
+Iteration:    1 / 3000 [  0%]  (Warmup)
+Iteration:    1 / 3000 [  0%]  (Warmup)

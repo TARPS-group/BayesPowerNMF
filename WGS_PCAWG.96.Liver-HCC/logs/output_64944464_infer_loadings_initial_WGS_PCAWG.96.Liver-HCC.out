@@ -1,0 +1,6 @@
+python scripts/infer-loadings-only.py data/WGS_PCAWG.96.ready.tsv Liver-HCC  --signatures-prefix Signature --signatures 1 4 5 6 9 12 14 16 17a 17b 18 19 22 24 26 28 29 30 31 35 40 --save-dir WGS_PCAWG.96.Liver-HCC/synthetic_data --subst-type SBS -n 326 -a 0.00 --zeta 1    
+data/WGS_PCAWG.96.ready.tsv
+Using 326 samples
+Using SBS1, SBS4, SBS5, SBS6, SBS9, SBS12, SBS14, SBS16, SBS17a, SBS17b, SBS18, SBS19, SBS22, SBS24, SBS26, SBS28, SBS29, SBS30, SBS31, SBS35, SBS40
+inferring loadings for 326 samples
+zeta = 1
