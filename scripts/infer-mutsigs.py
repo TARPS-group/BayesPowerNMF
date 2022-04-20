@@ -54,6 +54,10 @@ def parse_args():
                         help='power likelihood factor')
     parser.add_argument('--seed', type=int, default=1,
                         help='random seed')
+    parser.add_argument('--prob-zero', type=float, default=None)
+    parser.add_argument('--q1', type=float, default=None)
+    parser.add_argument('--q99', type=float, default=None)
+    parser.add_argument('--sparse', action='store_true')
     return parser.parse_args()
 
 
@@ -90,19 +94,31 @@ def main():
        description += '-eps-{:f}'.format(args.epsilon)
     if args.J0 != J0_DEFAULT:
        description += '-J0-{:.1f}'.format(J0)
-    if args.zeta != ZETA_DEFAULT:
-        description += '-zeta-{:.3f}'.format(args.zeta)
+    description += '-zeta-{:.3f}'.format(args.zeta)
     if args.no_rho:
        description += '-no-rho'
     samples_path = os.path.join(args.output,
                                 '{}-{}-samples.h5'.format(base_filename,
                                                           description))
 
+    if args.sparse is True:
+        p = args.prob_zero or 0.75
+        l99 = args.q99 or np.mean(counts.astype("int").sum(axis = 0)) / 2
+        a0, b0 = models.set_prior_hyperparameters(p, l99)
+    else:
+        lst = np.sort(counts.astype("int").sum(axis = 0))
+        l1 = args.q1 or lst[0] / len(sigs)
+        l99 = args.q99 or np.mean(pd.DataFrame.from_dict(Xs).values.astype("int").sum(axis = 0)) / 2
+        a0, b0 = models.set_prior_hyperparameters(l1, l99, False)
+    print("a0: {} b0: {}".format(a0, b0))
+
     # sample from posterior and save results
     total_iters = args.burnin + args.samples
     models.fit_model_and_save_results(
-        args.model+'_nmf', counts, args.K, samples_path, J0=J0, eps=args.epsilon,
-        alpha=args.alpha, a=args.a, no_rho=args.no_rho, seed=args.seed,
+        args.model + '_nmf', counts, args.K, samples_path, J0=J0, eps=args.epsilon,
+        alpha=args.alpha, a=args.a, 
+        no_rho=args.no_rho, 
+        seed=args.seed, a0 = a0, b0 = b0,
         lik_power=args.zeta, iters=total_iters, warmup=args.burnin,
         control=dict(adapt_delta=.98, max_treedepth=15))
 

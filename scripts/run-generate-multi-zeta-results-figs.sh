@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 #SBATCH --job-name generate_figs_WGS_PCAWG.96.ready.Lung-AdenoCA 
 #SBATCH -t 0-06:00 
 #SBATCH -p shared

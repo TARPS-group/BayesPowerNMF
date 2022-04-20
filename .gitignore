@@ -131,4 +131,16 @@ dmypy.json
 
 ##################################
 # Data & Experiments
-WGS_PCAWG.96.ready.Lung-AdenoCA/
+breast*
+liver*
+lung*
+ovary*
+skin*
+stomach*
+sparse*
+WGS*
+
+
+# testing batch scripts
+run*
+out.txt
