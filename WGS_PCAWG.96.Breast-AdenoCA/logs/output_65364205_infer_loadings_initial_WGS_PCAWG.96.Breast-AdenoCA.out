@@ -1,6 +1,0 @@
-python scripts/infer-loadings-nnls.py data/WGS_PCAWG.96.ready.tsv Breast-AdenoCA  --signatures-prefix Signature --signatures 1 2 3 5 8 9 13 17a 17b 18 37 40 41 --save-dir WGS_PCAWG.96.Breast-AdenoCA/synthetic_data --subst-type SBS -n 198 
-data/WGS_PCAWG.96.ready.tsv
-Using 198 samples
-Using SBS1, SBS2, SBS3, SBS5, SBS8, SBS9, SBS13, SBS17a, SBS17b, SBS18, SBS37, SBS40, SBS41
-Warning: some signatures do not have substantial loadings attributed to them: SBS9, SBS17a
-max loadings: [27. 58. 50. 63. 31.  9. 54.  9. 19. 32. 10. 39. 13.]

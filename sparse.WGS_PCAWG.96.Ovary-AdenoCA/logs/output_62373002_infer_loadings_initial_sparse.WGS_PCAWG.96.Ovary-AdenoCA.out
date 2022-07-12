@@ -1,3 +1,0 @@
-python scripts/infer-loadings-only.py data/WGS_PCAWG.96.ready.tsv Ovary-AdenoCA  --signatures-prefix Signature --signatures  --save-dir sparse.WGS_PCAWG.96.Ovary-AdenoCA/synthetic_data --subst-type SBS -n 113 -a 0.00 --zeta 1    --sparse 
-data/WGS_PCAWG.96.ready.tsv
-Using 113 samples

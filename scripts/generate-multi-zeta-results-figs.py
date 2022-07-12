@@ -36,9 +36,9 @@ def parse_args():
     parser.add_argument('--subst-type', default='SBS', choices=['SBS', 'DBS', 'INDEL'])
     parser.add_argument('--skip', type=int, default=25)
     # parser.add_argument('--best', action='store_true')
-    parser.add_argument('--signatures', metavar='K', type=int, nargs='*', default=[])
-    parser.add_argument('--signatures-file')
-    parser.add_argument('--use-pcawg-2018', action='store_true')
+    parser.add_argument('--signatures-file', default="")
+    parser.add_argument('--signatures-prefix', default="Signature")
+    parser.add_argument('--signatures', metavar='K', nargs='*', default=0)
     parser.add_argument('--ignore-summary', action='store_true')
     return parser.parse_args()
 
@@ -49,7 +49,7 @@ def expected_K(msi, start_sample=0):
 
 
 def format_template(template, seed, zeta):
-    zeta_str = 'zeta-{:.3f}-'.format(zeta) if zeta != 1.0 else ''
+    zeta_str = 'zeta-{:.3f}-'.format(zeta) 
     return template.format(seed, zeta_str)
 
 
@@ -130,6 +130,21 @@ def select_best_seed(sample_file_template, output_file_template, zeta, seeds, sk
     plt.close()
 
     return seeds[best_ind], lmls[best_ind], Ks[best_ind], np.nanmean(runtimes)
+
+
+def read_new_sigs(filename, sig_prefix):
+    sigs = pd.read_csv(filename, sep = "\t")
+    sigs = sigs.drop(columns = ["Substitution Type", "Trinucleotide"])
+    sigs = sigs.set_index("Somatic Mutation Type")
+    
+    channel_order = np.array(mutsig.substitution_names())
+    inds = sigs.index.values.tolist()
+    order = [inds.index(ch) for ch in channel_order]
+
+    sig_cols = sigs.columns.str.startswith(sig_prefix)
+    r = sigs.iloc[order, sig_cols].values.T
+    sig_names = sigs.columns.values[sig_cols]
+    return r, sig_names
 
 
 def main():
@@ -326,14 +341,21 @@ def main():
             format_template(sample_file_template, seed, zeta), verbose=False,
             name_prefix=name_prefix, cutoff=CUTOFF, sample_start=0)[0])
 
-    if args.signatures_file is not None:
-        comp_sigs = np.load(args.signatures_file, allow_pickle=True)
-        comp_sig_names = ['Sig {}'.format(i+1) for i in range(comp_sigs.shape[0])]
+    if args.signatures_file == "":
+        comp_sigs, comp_sig_names = mutsig.cosmic_signatures(subst_type = args.subst_type, validated = True)
     else:
-        if args.use_pcawg_2018:
-            comp_sigs, comp_sig_names = mutsig.cosmic_signatures(subst_type = 'SBS', validated = True)
-        else:
-            comp_sigs, comp_sig_names = mutsig.cosmic_signatures()
+        comp_sigs, comp_sig_names = read_new_sigs(args.signatures_file, args.signatures_prefix)
+    comp_sigs[comp_sigs <= 0] = 1e-10
+
+    if args.signatures == 0:
+        use_sig_inds = np.arange(len(ref_sig_names))
+    elif args.signatures_file == "":
+        use_sig_inds = np.array(mutsig.cosmic_v3_SBS_to_index(args.signatures)) - 1
+    else:
+        use_sig_inds = np.array(args.signatures) - 1
+    num_sigs = use_sig_inds.size
+    comp_sigs = comp_sigs[use_sig_inds]
+    comp_sig_names = comp_sig_names[use_sig_inds]
 
     def sig_names_with_mu(msi):
         return [r'{} ($\mu$ = {})'.format(sn, int(mu)) for sn, mu in zip(msi.sig_names, msi.mean_expected_loadings)]
@@ -362,62 +384,59 @@ def main():
                 plt.close('all')
 
     ## Visualize signatures and data using PCA
-    if len(args.signatures) > 0:
-        if args.use_pcawg_2018:
-            cosmic_sigs, _ = mutsig.cosmic_signatures(subst_type = 'SBS-validated')
-        else:
-            cosmic_sigs, _ = mutsig.cosmic_signatures()
-        use_sig_inds = np.array(args.signatures) - 1
-        num_sigs = len(use_sig_inds)
-        sigs = cosmic_sigs[use_sig_inds]
-        sig_names = ['Sig {}'.format(i+1) for i in use_sig_inds]
-    elif args.signatures_file is not None:
-        sigs = comp_sigs
-        sig_names = comp_sig_names
-    else:
-        sigs = None
-    if sigs is not None:
-        kernel = 'cosine'
-        pca_fig_file = output_file_template.format('mutsig-pcs')
-        if kernel is not None:
-            pca_fig_file += '-' + kernel + '-kernel'
+    # if len(args.signatures) > 0:
+    #     cosmic_sigs, _ = mutsig.cosmic_signatures()
+    #     use_sig_inds = np.array(args.signatures) - 1
+    #     num_sigs = len(use_sig_inds)
+    #     sigs = cosmic_sigs[use_sig_inds]
+    #     sig_names = ['Sig {}'.format(i+1) for i in use_sig_inds]
+    # elif args.signatures_file is not None:
+    #     sigs = comp_sigs
+    #     sig_names = comp_sig_names
+    # else:
+    #     sigs = None
+    # if sigs is not None:
+    #     kernel = 'cosine'
+    #     pca_fig_file = output_file_template.format('mutsig-pcs')
+    #     if kernel is not None:
+    #         pca_fig_file += '-' + kernel + '-kernel'
 
-        # plt.figure()
-        # colors = sns.color_palette('Purples_d', n_colors=len(zetas))
-        # colors.reverse()
-        # inferred_mutsigs = [(msi.mean_mutsigs, None, '$\zeta =$ {:.3f} (K = {:.1f}'.format(zeta, K),
-        #                      dict(color=color, marker='*', markersize=10))
-        #                         for msi, zeta, K, color in zip(msis, zetas, Ks, colors)]
-        # plotting.plot_mutsigs_pca(*inferred_mutsigs
-        #                           + [(all_counts.T, None, 'Data', dict(color='k', markersize=3)),
-        #                              (sigs, sig_names, 'True', dict(marker='o', markersize=6, color='b'))],
-        #                           #(np.eye(96), None, 'Extreme points', dict(marker='*', markersize=4, color='m')),
-        #                           #(msis[seed].mean_mutsigs, None, 'MCMC'),
-        #                           kernel=kernel, pcs_from=all_counts.T,
-        #                           show=False)
-        # plt.savefig(pca_fig_file + '.pdf', bbox_inches='tight')
-        # plt.close()
-        n_pcs = min(5, len(sig_names)) - 1
-        n_cols = n_pcs - 1
-        thin_samples = max(1, int(msis[0].mutsigs_samples.shape[-1] / 2000))
-        with PdfPages(pca_fig_file + '-detailed.pdf') as pdf:
-            for zeta, msi, K in zip(zetas, msis, Ks):
-                # plt.figure(figsize=(9, 5))
-                fig, axes = plt.subplots(1, n_cols,
-                                         figsize=(4*(n_cols+1), 7),
-                                         sharey=True, sharex=True, squeeze=True)
-                plotting.plot_mutsigs_pca(*[(all_counts.T, None, 'Data', dict(color='k', markersize=3)),
-                                            (sigs, sig_names, 'True', dict(marker='o', markersize=6, color='b'))]
-                                          +[(mutsigs[:,::thin_samples].T, None, '{} ($\mu =$ {:.1f})'.format(msi.sig_names[i],
-                                                                                                          msi.mean_expected_loadings[i]),
-                                                                                                          dict(marker='.', markersize=10))
-                                                    for i, mutsigs in enumerate(msi.mutsigs_samples)],
-                                          kernel=kernel, pcs_from=sigs, #all_counts.T,
-                                          ax=axes, show=False)
-                plt.title('$\zeta = {:.3f}$ (K = {})'.format(zeta, K))
-                plt.tight_layout()
-                pdf.savefig(box_inches='tight')
-                plt.close()
+    #     # plt.figure()
+    #     # colors = sns.color_palette('Purples_d', n_colors=len(zetas))
+    #     # colors.reverse()
+    #     # inferred_mutsigs = [(msi.mean_mutsigs, None, '$\zeta =$ {:.3f} (K = {:.1f}'.format(zeta, K),
+    #     #                      dict(color=color, marker='*', markersize=10))
+    #     #                         for msi, zeta, K, color in zip(msis, zetas, Ks, colors)]
+    #     # plotting.plot_mutsigs_pca(*inferred_mutsigs
+    #     #                           + [(all_counts.T, None, 'Data', dict(color='k', markersize=3)),
+    #     #                              (sigs, sig_names, 'True', dict(marker='o', markersize=6, color='b'))],
+    #     #                           #(np.eye(96), None, 'Extreme points', dict(marker='*', markersize=4, color='m')),
+    #     #                           #(msis[seed].mean_mutsigs, None, 'MCMC'),
+    #     #                           kernel=kernel, pcs_from=all_counts.T,
+    #     #                           show=False)
+    #     # plt.savefig(pca_fig_file + '.pdf', bbox_inches='tight')
+    #     # plt.close()
+    #     n_pcs = min(5, len(sig_names)) - 1
+    #     n_cols = n_pcs - 1
+    #     thin_samples = max(1, int(msis[0].mutsigs_samples.shape[-1] / 2000))
+    #     with PdfPages(pca_fig_file + '-detailed.pdf') as pdf:
+    #         for zeta, msi, K in zip(zetas, msis, Ks):
+    #             # plt.figure(figsize=(9, 5))
+    #             fig, axes = plt.subplots(1, n_cols,
+    #                                      figsize=(4*(n_cols+1), 7),
+    #                                      sharey=True, sharex=True, squeeze=True)
+    #             plotting.plot_mutsigs_pca(*[(all_counts.T, None, 'Data', dict(color='k', markersize=3)),
+    #                                         (sigs, sig_names, 'True', dict(marker='o', markersize=6, color='b'))]
+    #                                       +[(mutsigs[:,::thin_samples].T, None, '{} ($\mu =$ {:.1f})'.format(msi.sig_names[i],
+    #                                                                                                       msi.mean_expected_loadings[i]),
+    #                                                                                                       dict(marker='.', markersize=10))
+    #                                                 for i, mutsigs in enumerate(msi.mutsigs_samples)],
+    #                                       kernel=kernel, pcs_from=sigs, #all_counts.T,
+    #                                       ax=axes, show=False)
+    #             plt.title('$\zeta = {:.3f}$ (K = {})'.format(zeta, K))
+    #             plt.tight_layout()
+    #             pdf.savefig(box_inches='tight')
+    #             plt.close()
 
 
 if __name__ == '__main__':

@@ -126,18 +126,18 @@ def main():
     exp_file.close()
 
 
-def generate_perturbed_counts(loadings, sigs, mean_error=0.02,
+def generate_perturbed_counts(loadings, sigs, mean_error=0.005,
                               seed=30192):
     np.random.seed(seed)
     if mean_error == np.inf:
         counts = np.random.poisson(loadings.T.dot(sigs))
     else:
-        # log (mean error / sparsity) = 3.6651 - 0.9822 log (concentration)
+        # log (mean error / sparsity) = 3.6641 - 0.9820 log (concentration)
         # sparsity = 1 / (I * ||sig||^2)
         K, J = loadings.shape
         K, I = sigs.shape
         sparsity = 1 / (I * np.linalg.norm(sigs, axis = 1) ** 2)
-        concentration = np.exp( (3.6651 - np.log (mean_error / sparsity)) / 0.9822 )
+        concentration = np.exp( (3.6641 - np.log (mean_error / sparsity)) / 0.9820 )
         # print(sparsity)
         # print(concentration)
         counts = np.zeros((J, I), dtype=int)

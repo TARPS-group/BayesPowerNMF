@@ -1,6 +1,0 @@
-Traceback (most recent call last):
-  File "/net/rcstorenfs02/ifs/rc_labs/miller_lab/csxue/bayes-power-sig/scripts/infer-loadings-only.py", line 231, in <module>
-    main()
-  File "/net/rcstorenfs02/ifs/rc_labs/miller_lab/csxue/bayes-power-sig/scripts/infer-loadings-only.py", line 98, in main
-    ref_sigs, ref_sig_names = mutsig.cosmic_signatures(subst_type = args.subst_type, validated = True)
-TypeError: cosmic_signatures() got an unexpected keyword argument 'validated'

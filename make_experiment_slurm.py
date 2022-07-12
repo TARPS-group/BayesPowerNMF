@@ -110,7 +110,7 @@ INFER_LOADINGS_AND_SIGS_LOOP_TEMPLATE = """#!/bin/bash
 module load gcc/8.2.0-fasrc01 python/3.8.5-fasrc01
 
 eval "$(conda shell.bash hook)"
-conda activate mutsig-venv
+conda activate {conda_env}
 
 ZETAS="{zetas}"
 PREFIX={synthetic_prefix}
@@ -120,10 +120,9 @@ EXP_DIR="{exp_name}"
 SEEDS="{seeds}"
 
 
-
 cd {BPS_dir}
-echo "python scripts/submit-nmf-jobs.py $PREFIX $EXP_DIR $TEMPLATE --seeds $SEEDS --zetas $ZETAS --exp-list $EXPS"
-python scripts/submit-nmf-jobs.py $PREFIX $EXP_DIR $TEMPLATE --seeds $SEEDS --zetas $ZETAS --exp-list $EXPS
+echo "python scripts/submit-nmf-jobs.py $PREFIX $EXP_DIR $TEMPLATE --seeds $SEEDS --zetas $ZETAS --exp-list $EXPS --slurm"
+python scripts/submit-nmf-jobs.py $PREFIX $EXP_DIR $TEMPLATE --seeds $SEEDS --zetas $ZETAS --exp-list $EXPS --slurm
 """
 
 MAKE_PLOTS_TEMPLATE = """#!/bin/bash
@@ -151,7 +150,6 @@ RESULTS_DIR=results/
 DATA={data}
 SUBST_TYPE={subst_type}
 OPTS={opts}
-
 
 
 cd {BPS_dir}
@@ -290,6 +288,7 @@ def main():
     stage_3_a_content = INFER_LOADINGS_AND_SIGS_LOOP_TEMPLATE.format(
         jobname = "submit_NMF_" + exp_name,
         log_dir = os.path.join(wd, exp_name, "logs"),
+        conda_env = exp.get("conda_env"),
         exp_name = exp_name,
         BPS_dir = wd,
         zetas = exp.get("testing_powers"),
@@ -312,8 +311,9 @@ def main():
     ## Stage IIIb
     stage_3_b_content = MAKE_PLOTS_TEMPLATE.format(
         jobname = "generate_plots_{}".format(sexp),
+        queue = exp.get("queue"),
         log_dir = os.path.join(wd, exp_name, "logs"),
-        virtual_env = exp.get("virtual_env"),
+        conda_env = exp.get("conda_env"),
         BPS_dir = os.path.join(wd),
         experiment_name = synthetic_prefix,
         B = exp.get("burnin"),
@@ -344,6 +344,7 @@ def main():
     stage_5_a_content = INFER_LOADINGS_AND_SIGS_LOOP_TEMPLATE.format(
         jobname = "submit_NMF_" + exp_name,
         log_dir = os.path.join(wd, exp_name, "logs"),
+        conda_env = exp.get("conda_env"),
         exp_name = exp_name,
         BPS_dir = wd,
         zetas = "$1",

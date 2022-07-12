@@ -1,2 +1,0 @@
-python scripts/infer-loadings-only.py data/WGS_PCAWG.96.tsv Stomach-AdenoCA  --signatures-prefix Signature --signatures 0 --save-dir sparse.WGS_PCAWG.96.Stomach-AdenoCA/synthetic_data --subst-type SBS -n 75 -a 0.00 --zeta 1    --sparse 
-data/WGS_PCAWG.96.tsv

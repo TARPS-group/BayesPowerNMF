@@ -46,8 +46,8 @@ def parse_args():
                         help='mutational signatures prior hyperparameter')
     parser.add_argument('--epsilon', '-e', type=float, default=EPS_DEFAULT,
                         help='ARD tolerance parameter')
-    parser.add_argument('--no-rho', action='store_true',
-                        help='do not rescale rates by counts')
+    # parser.add_argument('--no-rho', action='store_true',
+    #                     help='do not rescale rates by counts')
     parser.add_argument('--J0', type=float, default=J0_DEFAULT,
                         help='minimum sample support (for ARD prior). Intepreted as J * J0 if J0 <= 1.')
     parser.add_argument('--zeta', type=float, default=ZETA_DEFAULT,
@@ -83,7 +83,7 @@ def main():
 
     # where to save results
     base_filename = os.path.splitext(os.path.basename(args.data))[0]
-    description = '' if args.model == MODEL_DEFAULT else args.model + '-'
+    description = args.model + '-'
     description += 'burnin-{}-samps-{}-K-{}-seed-{}'.format(
         args.burnin, args.samples, args.K, args.seed)
     if args.a != A_DEFAULT:
@@ -95,8 +95,6 @@ def main():
     if args.J0 != J0_DEFAULT:
        description += '-J0-{:.1f}'.format(J0)
     description += '-zeta-{:.3f}'.format(args.zeta)
-    if args.no_rho:
-       description += '-no-rho'
     samples_path = os.path.join(args.output,
                                 '{}-{}-samples.h5'.format(base_filename,
                                                           description))
@@ -115,10 +113,10 @@ def main():
     # sample from posterior and save results
     total_iters = args.burnin + args.samples
     models.fit_model_and_save_results(
-        args.model + '_nmf', counts, args.K, samples_path, J0=J0, eps=args.epsilon,
-        alpha=args.alpha, a=args.a, 
-        no_rho=args.no_rho, 
-        seed=args.seed, a0 = a0, b0 = b0,
+        args.model + '_nmf', counts, args.K, samples_path, J0=J0, 
+        eps=args.epsilon, alpha=args.alpha, 
+        a=args.a, no_rho=True, seed=args.seed, 
+        a0 = a0, b0 = b0,
         lik_power=args.zeta, iters=total_iters, warmup=args.burnin,
         control=dict(adapt_delta=.98, max_treedepth=15))
 

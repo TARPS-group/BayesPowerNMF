@@ -1,8 +1,0 @@
-python scripts/generate-synthetic-data.py synthetic-38-lung-adenoca-1-2-3-4-5-9-13-17a-17b-18-28-40  --signatures-prefix Signature --signatures 1 2 3 4 5 9 13 17a 17b 18 28 40 --save-dir WGS_PCAWG.96.ready.Lung-AdenoCA_ALT/synthetic_data -s 1 -n 38 --perturbed 0.01 0.02 --overdispersed 2 --contamination 1 5 --trim
-Using SBS1, SBS2, SBS3, SBS4, SBS5, SBS9, SBS13, SBS17b, SBS18, SBS28, SBS40
-correct None 367.4714912280702
-perturbed 0.01 367.4780701754386
-perturbed 0.02 367.7003837719298
-contamination 1 367.41337719298247
-contamination 5 367.81606359649123
-overdispersed 2.0 367.20449561403507
