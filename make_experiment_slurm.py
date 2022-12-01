@@ -160,7 +160,7 @@ python scripts/generate-multi-zeta-results-figs.py $PREFIX $MID $EXP_DIR --seeds
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_file', default = "bps.ini")
+    parser.add_argument('--config-file', default = "bps.ini")
     parser.add_argument('--section', default = "EXPERIMENT")
     return parser.parse_args()
 

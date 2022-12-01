@@ -130,17 +130,17 @@ dmypy.json
 
 
 ##################################
-# Data & Experiments
+# Experiment files
 breast*
 liver*
 lung*
 ovary*
 skin*
 stomach*
+subsample*
 sparse*
 WGS*
 
 
 # testing batch scripts
-run*
 out.txt

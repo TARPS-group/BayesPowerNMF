@@ -130,7 +130,7 @@ def main():
     else:
         lst = np.sort(pd.DataFrame.from_dict(Xs).values.astype("int").sum(axis = 0))
         l1 = args.q1 or lst[0] / len(sigs)
-        l99 = args.q99 or np.mean(pd.DataFrame.from_dict(Xs).values.astype("int").sum(axis = 0)) / 2
+        l99 = args.q99 or np.mean(lst) / 2
         kwargs['a0'], kwargs['b0'] = models.set_prior_hyperparameters(l1, l99, False)
     
     fits = models.infer_loadings(sigs, sig_names, Xs, **kwargs)

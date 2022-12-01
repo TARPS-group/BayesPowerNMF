@@ -38,8 +38,9 @@ def parse_args():
     # parser.add_argument('--best', action='store_true')
     parser.add_argument('--signatures-file', default="")
     parser.add_argument('--signatures-prefix', default="Signature")
-    parser.add_argument('--signatures', metavar='K', nargs='*', default=0)
+    parser.add_argument('--signatures', metavar='K', nargs='*')
     parser.add_argument('--ignore-summary', action='store_true')
+    parser.add_argument('--cosmic-version', default='v3')
     return parser.parse_args()
 
 
@@ -342,14 +343,14 @@ def main():
             name_prefix=name_prefix, cutoff=CUTOFF, sample_start=0)[0])
 
     if args.signatures_file == "":
-        comp_sigs, comp_sig_names = mutsig.cosmic_signatures(subst_type = args.subst_type, validated = True)
+        comp_sigs, comp_sig_names = mutsig.cosmic_signatures(subst_type = subst_type, validated = True, version = args.cosmic_version)
     else:
         comp_sigs, comp_sig_names = read_new_sigs(args.signatures_file, args.signatures_prefix)
     comp_sigs[comp_sigs <= 0] = 1e-10
 
-    if args.signatures == 0:
-        use_sig_inds = np.arange(len(ref_sig_names))
-    elif args.signatures_file == "":
+    if args.signatures == []:
+        use_sig_inds = np.arange(len(comp_sig_names))
+    elif args.signatures_file == "" and args.cosmic_version == "v3":
         use_sig_inds = np.array(mutsig.cosmic_v3_SBS_to_index(args.signatures)) - 1
     else:
         use_sig_inds = np.array(args.signatures) - 1
@@ -378,6 +379,8 @@ def main():
                 msi = analysis.load_samples_h5_file(
                         file_path, verbose=False, name_prefix=name_prefix,
                         cutoff=CUTOFF, sample_start=0)[0]
+                plotting.plot_loadings_matrix(msi.mean_loadings, msi.sig_names, sample_names, title=None,
+                                      save_path=output_file_template.format('comparison-zeta-{:.3f}-seed-{}-loadings.pdf'.format(zeta, seed)))
                 analysis.compare_signatures(
                     msi.mutsigs_samples.squeeze(), sig_names_with_mu(msi), comp_sigs, comp_sig_names, top=2, bipartite = True, save_path_base=output_file_template.format(
                         'comparison-zeta-{:.3f}-seed-{}'.format(zeta, seed)))

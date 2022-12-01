@@ -16,13 +16,14 @@ def parse_args():
     parser.add_argument('prefix')
     parser.add_argument('--signatures-file', default="")
     parser.add_argument('--signatures-prefix', default="Signature")
-    parser.add_argument('--signatures', metavar='K', nargs='*', default=0)
+    parser.add_argument('--signatures', metavar='K', nargs='*')
     parser.add_argument('--save-dir', default='.')
     parser.add_argument('-s', '--seed', type=int, default=1)
     parser.add_argument('-n', '--num-samples', type=int, default=0)
     parser.add_argument('--perturbed', type=float, nargs = "*")
     parser.add_argument('--contamination', type=int, nargs = "*")
     parser.add_argument('--overdispersed', type=float, nargs = "*")
+    parser.add_argument('--cosmic-version', default='v3')
     parser.add_argument('--trim', action='store_true')
     return parser.parse_args()
 
@@ -47,6 +48,10 @@ def main():
     base_description = args.prefix
     loadings_file_base = os.path.join(args.save_dir, base_description + '-loadings')
     loadings_file = loadings_file_base + '.npy'
+    output_reference_loadings = os.path.join(args.save_dir,
+                                        '{}-seed-{}-GT-loadings.csv'.format(base_description, args.seed))
+    trimmed_output_reference_loadings = os.path.join(args.save_dir,
+                                        '{}-seed-{}-GT-loadings-trimmed.csv'.format(base_description, args.seed))
     output_file_template = os.path.join(args.save_dir,
                                         '{}-seed-{}{{}}.tsv'.format(base_description, args.seed))
 
@@ -58,29 +63,32 @@ def main():
 
     # load signatures
     if args.signatures_file == "":
-        ref_sigs, ref_sig_names = mutsig.cosmic_signatures()
+        ref_sigs, ref_sig_names = mutsig.cosmic_signatures(version = args.cosmic_version)
     else:
         ref_sigs, ref_sig_names = read_new_sigs(args.signatures_file, args.signatures_prefix)
     ref_sigs[ref_sigs <= 0] = 1e-10
 
-    if args.signatures == 0:
+    if args.signatures == []:
         use_sig_inds = np.arange(len(ref_sig_names))
-    elif args.signatures_file == "":
+    elif args.signatures_file == "" and args.cosmic_version == "v3":
         use_sig_inds = np.array(mutsig.cosmic_v3_SBS_to_index(args.signatures)) - 1
     else:
         use_sig_inds = np.array(args.signatures) - 1
 
     # trim minimal signatures
+    new_use_sig_inds = []
+    new_k = []
+    normalized_loadings = loadings_array / np.sum(loadings_array, axis=0, keepdims=True)
+    for (k, sig) in zip(range(use_sig_inds.size), use_sig_inds):
+        if np.sum(normalized_loadings[k] > 0.1) > 0 or np.sum(loadings_array[k]) > 0.02 * np.sum(loadings_array):
+            new_use_sig_inds.append(sig)
+            new_k.append(k)
     if args.trim:
-        new_use_sig_inds = []
-        new_k = []
-        normalized_loadings = loadings_array / np.sum(loadings_array, axis=0, keepdims=True)
-        for (k, sig) in zip(range(use_sig_inds.size), use_sig_inds):
-            if np.sum(normalized_loadings[k] > 0.1) > 0 or np.sum(loadings_array[k]) > 0.02 * np.sum(loadings_array):
-                new_use_sig_inds.append(sig)
-                new_k.append(k)
         use_sig_inds = np.array(new_use_sig_inds)
         loadings_array = loadings_array[new_k]
+    else:
+        print(pandas.DataFrame(np.vstack((np.mean(loadings_array[new_k], axis = 1), ref_sig_names[np.array(new_use_sig_inds)])).T))
+        pandas.DataFrame(np.vstack((np.mean(loadings_array[new_k], axis = 1), ref_sig_names[np.array(new_use_sig_inds)])).T).to_csv(trimmed_output_reference_loadings, header = False, index = False)
 
     num_sigs = use_sig_inds.size
     sigs = ref_sigs[use_sig_inds]
@@ -88,8 +96,18 @@ def main():
 
     print('Using', ', '.join(sig_names))
 
+    # save "ground truth" loadings
+    lds = np.mean(loadings_array, axis = 1)
+    pandas.DataFrame(np.vstack((lds, sig_names)).T).to_csv(output_reference_loadings, header = False, index = False)
+
     # generate synthetic data
-    configs = [('correct', None)] + [('perturbed', p) for p in args.perturbed] + [('contamination', p) for p in args.contamination] + [('overdispersed', p) for p in args.overdispersed]
+    configs = [('correct', None)] 
+    if args.perturbed is not None:
+        configs = configs + [('perturbed', p) for p in args.perturbed] 
+    if args.contamination is not None:
+        configs = configs + [('contamination', p) for p in args.contamination]
+    if args.overdispersed is not None:
+        configs = configs + [('overdispersed', p) for p in args.overdispersed]
 
     exp_list = ""
 

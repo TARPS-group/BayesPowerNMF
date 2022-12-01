@@ -6,14 +6,13 @@ from collections import OrderedDict
 import numpy as np
 import scipy as sp
 import pandas as pd
-import pystan
 
 import seaborn as sns
 # make figures pretty
 sns.set_style('white')
 sns.set_context('notebook', font_scale=2, rc={'lines.linewidth': 3})
 
-from mutsigtools import mutsig, models, analysis, plotting
+from mutsigtools import mutsig, analysis, plotting
 
 
 def parse_args():
@@ -22,11 +21,12 @@ def parse_args():
     parser.add_argument('filter')
     parser.add_argument('--signatures-file', default="")
     parser.add_argument('--signatures-prefix', default="Signature")
-    parser.add_argument('--signatures', metavar='K', nargs='*', default=0)
+    parser.add_argument('--signatures', metavar='K', nargs='*')
     parser.add_argument('--save-dir', default='.')
     parser.add_argument('--subst-type', default='SBS', choices=['SBS', 'DBS', 'INDEL'])
     parser.add_argument('-n', '--num-samples', type=int, default=0)
     parser.add_argument('--plain', action='store_true')
+    parser.add_argument('--cosmic-version', default='v3')
     return parser.parse_args()
 
 
@@ -68,7 +68,7 @@ def main():
     filtered_df.to_csv(counts_file, sep = "\t")
     
     # construct filenames and descriptions
-    if args.signatures == 0:
+    if args.signatures == []:
         base_description = 'synthetic-{}-{}-{}'.format(
             num_samples, args.filter, "all").lower()
     else:
@@ -81,14 +81,14 @@ def main():
     
     # load signatures
     if args.signatures_file == "":
-        ref_sigs, ref_sig_names = mutsig.cosmic_signatures(subst_type = args.subst_type, validated = True)
+        ref_sigs, ref_sig_names = mutsig.cosmic_signatures(subst_type = args.subst_type, validated = True, version = args.cosmic_version)
     else:
         ref_sigs, ref_sig_names = read_new_sigs(args.signatures_file, args.signatures_prefix)
     ref_sigs[ref_sigs <= 0] = 1e-10
 
-    if args.signatures == 0:
+    if args.signatures == []:
         use_sig_inds = np.arange(len(ref_sig_names))
-    elif args.signatures_file == "":
+    elif args.signatures_file == "" and args.cosmic_version == "v3":
         use_sig_inds = np.array(mutsig.cosmic_v3_SBS_to_index(args.signatures)) - 1
     else:
         use_sig_inds = np.array(args.signatures) - 1

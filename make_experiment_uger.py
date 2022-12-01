@@ -15,7 +15,7 @@ INFER_LOADINGS_TEMPLATE = """#!/bin/bash
 #$ -l h_rt=01:00:00
 #$ -l os=RedHat7
 
-. /broad/tools/scripts/useuse
+source /broad/software/scripts/useuse
 
 reuse .python-3.6.0
 reuse GCC-5.2
@@ -46,7 +46,7 @@ GENERATE_SYNTHETIC_TEMPLATE = """#!/bin/bash
 #$ -l h_rt=00:15:00
 #$ -l os=RedHat7
 
-. /broad/tools/scripts/useuse
+source /broad/software/scripts/useuse
 
 reuse .python-3.6.0
 source {virtual_env}/bin/activate
@@ -75,10 +75,10 @@ INFER_LOADINGS_AND_SIGS_TEMPLATE = """#!/bin/bash
 #$ -o {log_dir}
 
 #$ -l h_vmem=64G
-#$ -l h_rt=120:00:00
+#$ -l h_rt={max_time}
 #$ -l os=RedHat7
 
-. /broad/tools/scripts/useuse
+source /broad/software/scripts/useuse
 
 reuse .python-3.6.0
 reuse GCC-5.2
@@ -113,7 +113,7 @@ INFER_LOADINGS_AND_SIGS_LOOP_TEMPLATE = """#!/bin/bash
 #$ -l h_rt=00:20:00
 #$ -l os=RedHat7
 
-. /broad/tools/scripts/useuse
+source /broad/software/scripts/useuse
 
 reuse .python-3.6.0
 reuse UGER
@@ -142,7 +142,7 @@ MAKE_PLOTS_LOOP_TEMPLATE = """#!/bin/bash
 #$ -l h_rt=00:05:00
 #$ -l os=RedHat7
 
-. /broad/tools/scripts/useuse
+source /broad/software/scripts/useuse
 
 reuse .python-3.6.0
 reuse UGER
@@ -169,7 +169,7 @@ MAKE_PLOTS_TEMPLATE = """#!/bin/bash
 #$ -l os=RedHat7
 
 
-. /broad/tools/scripts/useuse
+source /broad/software/scripts/useuse
 
 reuse .python-3.6.0
 source {virtual_env}/bin/activate
@@ -198,9 +198,37 @@ echo "python scripts/generate-multi-zeta-results-figs.py ${{SYNTHETIC_PREFIX}}${
 python scripts/generate-multi-zeta-results-figs.py ${{SYNTHETIC_PREFIX}}${{EXP}}-$PREFIX $MID $EXP_DIR --seeds $SEEDS --zetas $ZETAS --skip $SKIP --save-dir $SAVE_DIR --results-dir $RESULTS_DIR --counts-file $DATA --subst-type $SUBST_TYPE $SIGS_FILE --signatures-prefix $SIGS_PREFIX --signatures $SIGNATURES $OPTS
 """
 
+
+PLOT_COMPARISON_TEMPLATE = """#!/bin/bash
+
+#$ -N {jobname}
+#$ -j y
+#$ -o {log_dir}
+
+#$ -l h_vmem=16G
+#$ -l h_rt=00:05:00
+#$ -l os=RedHat7
+
+
+source /broad/software/scripts/useuse
+
+reuse R-4.1
+
+EXP_DIR={exp_dir}
+SYNTHETIC_PREFIX="{synthetic_prefix}"
+SYNTHETIC_SUFFIX="-{model}-burnin-{B}-samps-{S}-K-{K}-a-{a:.2f}-J0-{J0:.1f}-multi-zeta"
+ZETAS="{zetas}"
+
+
+cd {BPS_dir}
+echo "Rscript scripts/plot_COSMIC_grid.R $EXP_DIR $SYNTHETIC_PREFIX $SYNTHETIC_SUFFIX '$ZETAS'"
+Rscript scripts/plot_COSMIC_grid.R $EXP_DIR $SYNTHETIC_PREFIX $SYNTHETIC_SUFFIX "$ZETAS"
+"""
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_file', default = "bps.ini")
+    parser.add_argument('--config-file', default = "bps.ini")
     parser.add_argument('--section', default = "EXPERIMENT")
     return parser.parse_args()
 
@@ -264,10 +292,10 @@ def main():
         exp.get("sample_prefixes"), 
         "-".join(exp.get("putative_sigs").split())
     ).lower()
-    if exp.getfloat("a_init") != 0:
-        synthetic_prefix += '-a-{:.2f}'.format(float(exp.get("a_init")))
-    if exp.getfloat("loadings_inference_power") != 1:
-        base_description += '-zeta-{:.1f}'.format(float(exp.get("loadings_inference_power")))
+    # if exp.getfloat("a_init") != 0:
+    #     synthetic_prefix += '-a-{:.2f}'.format(float(exp.get("a_init")))
+    # if exp.getfloat("loadings_inference_power") != 1:
+    #     synthetic_prefix += '-zeta-{:.1f}'.format(float(exp.get("loadings_inference_power")))
     if exp.getboolean("median") is True:
         synthetic_prefix += '-median'
 
@@ -303,6 +331,7 @@ def main():
         jobname = "NMF_" + exp_name,
         log_dir = os.path.join(wd, exp_name, "logs"),
         virtual_env = exp.get("virtual_env"),
+        max_time = exp.get("max_time"),
         exp_name = exp_name,
         BPS_dir = wd,
         model = exp.get("model"),
@@ -365,7 +394,7 @@ def main():
         subst_type = exp.get("subst_type"),
         sigs_file = "" if exp.get("signatures_file") == "" else "--signatures-file {}".format(exp.get("signatures_file")),
         sigs_prefix = exp.get("signatures_prefix"),
-        signatures = exp.get("putative_sigs"),
+        signatures = "", #signatures = exp.get("putative_sigs"),
         opts = "--ignore-summary"
     )
 
@@ -386,7 +415,24 @@ def main():
     with open(os.path.join(exp_name, "experiment_scripts", "stage_3_b.sh"), "w+") as f:
         f.writelines(stage_3_b_content)
 
-    # ## Stage IIIc
+    ## Stage IV
+    stage_4_content = PLOT_COMPARISON_TEMPLATE.format(
+        jobname = "plot_comparison_" + exp_name,
+        log_dir = os.path.join(wd, exp_name, "logs"),
+        BPS_dir = wd,
+        exp_dir = os.path.join(wd, exp_name),
+        synthetic_prefix = synthetic_prefix + "-seed-",
+        model = exp.get("model"),
+        B = exp.get("burnin"),
+        S = exp.get("samples"),
+        K = exp.get("K"),
+        a = float(exp.get("a_new")),
+        J0 = float(exp.get("J0")),
+        zetas = exp.get("testing_powers")
+    )
+
+    with open(os.path.join(exp_name, "experiment_scripts", "stage_4.sh"), "w+") as f:
+        f.writelines(stage_4_content)
 
     ## Stage Va
     stage_5_a_content = INFER_LOADINGS_AND_SIGS_LOOP_TEMPLATE.format(
@@ -426,7 +472,8 @@ def main():
         a = float(exp.get("a_new")),
         J0 = float(exp.get("J0")),
         seeds = " ".join(map(str, list(range(1, int(exp.get("no_chains")) + 1)))),
-        zetas = "$2",
+        # zetas = "$2",
+        zetas = exp.get("testing_powers"),
         skip = exp.get("skip"),
         subst_type = exp.get("subst_type"),
         sigs_file = "" if exp.get("signatures_file") == "" else "--signatures-file {}".format(exp.get("signatures_file")),
