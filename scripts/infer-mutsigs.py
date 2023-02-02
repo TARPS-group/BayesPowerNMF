@@ -54,10 +54,6 @@ def parse_args():
                         help='power likelihood factor')
     parser.add_argument('--seed', type=int, default=1,
                         help='random seed')
-    parser.add_argument('--prob-zero', type=float, default=None)
-    parser.add_argument('--q1', type=float, default=None)
-    parser.add_argument('--q99', type=float, default=None)
-    parser.add_argument('--sparse', action='store_true')
     return parser.parse_args()
 
 
@@ -99,15 +95,8 @@ def main():
                                 '{}-{}-samples.h5'.format(base_filename,
                                                           description))
 
-    if args.sparse is True:
-        p = args.prob_zero or 0.75
-        l99 = args.q99 or np.mean(counts.astype("int").sum(axis = 0)) / 2
-        a0, b0 = models.set_prior_hyperparameters(p, l99)
-    else:
-        lst = np.sort(counts.astype("int").sum(axis = 0))
-        l1 = args.q1 or lst[0] / len(sigs)
-        l99 = args.q99 or np.mean(pd.DataFrame.from_dict(Xs).values.astype("int").sum(axis = 0)) / 2
-        a0, b0 = models.set_prior_hyperparameters(l1, l99, False)
+    a0 = J0 * args.a + 1
+    b0 = args.epsilon * (a0 - 1)
     print("a0: {} b0: {}".format(a0, b0))
 
     # sample from posterior and save results

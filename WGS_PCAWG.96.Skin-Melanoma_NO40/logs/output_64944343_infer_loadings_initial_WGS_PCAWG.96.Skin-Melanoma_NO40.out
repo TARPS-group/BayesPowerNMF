@@ -1,6 +1,0 @@
-python scripts/infer-loadings-only.py data/WGS_PCAWG.96.ready.tsv Skin-Melanoma  --signatures-prefix Signature --signatures 1 2 5 7a 7b 7c 7d 13 17a 17b 38 --save-dir WGS_PCAWG.96.Skin-Melanoma_NO40/synthetic_data --subst-type SBS -n 107 -a 0.00 --zeta 1    
-data/WGS_PCAWG.96.ready.tsv
-Using 107 samples
-Using SBS1, SBS2, SBS5, SBS7a, SBS7b, SBS7c, SBS7d, SBS13, SBS17a, SBS17b, SBS38
-inferring loadings for 107 samples
-zeta = 1

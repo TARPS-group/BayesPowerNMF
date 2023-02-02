@@ -50,8 +50,8 @@ def main():
     loadings_file = loadings_file_base + '.npy'
     output_reference_loadings = os.path.join(args.save_dir,
                                         '{}-seed-{}-GT-loadings.csv'.format(base_description, args.seed))
-    trimmed_output_reference_loadings = os.path.join(args.save_dir,
-                                        '{}-seed-{}-GT-loadings-trimmed.csv'.format(base_description, args.seed))
+    # trimmed_output_reference_loadings = os.path.join(args.save_dir,
+    #                                     '{}-seed-{}-GT-loadings-trimmed.csv'.format(base_description, args.seed))
     output_file_template = os.path.join(args.save_dir,
                                         '{}-seed-{}{{}}.tsv'.format(base_description, args.seed))
 
@@ -86,9 +86,9 @@ def main():
     if args.trim:
         use_sig_inds = np.array(new_use_sig_inds)
         loadings_array = loadings_array[new_k]
-    else:
-        print(pandas.DataFrame(np.vstack((np.mean(loadings_array[new_k], axis = 1), ref_sig_names[np.array(new_use_sig_inds)])).T))
-        pandas.DataFrame(np.vstack((np.mean(loadings_array[new_k], axis = 1), ref_sig_names[np.array(new_use_sig_inds)])).T).to_csv(trimmed_output_reference_loadings, header = False, index = False)
+    # else:
+    #     print(pandas.DataFrame(np.vstack((np.mean(loadings_array[new_k], axis = 1), ref_sig_names[np.array(new_use_sig_inds)])).T))
+    #     pandas.DataFrame(np.vstack((np.mean(loadings_array[new_k], axis = 1), ref_sig_names[np.array(new_use_sig_inds)])).T).to_csv(trimmed_output_reference_loadings, header = False, index = False)
 
     num_sigs = use_sig_inds.size
     sigs = ref_sigs[use_sig_inds]

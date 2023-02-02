@@ -1,8 +1,0 @@
-python scripts/generate-synthetic-data.py synthetic-75-stomach-adenoca-1-2-3-5-9-13-15-17a-17b-18-20-21-26-28-40-41-44  --signatures-prefix Signature --signatures 1 2 3 5 9 13 15 17a 17b 18 20 21 26 28 40 41 44 --save-dir WGS_PCAWG.96.Stomach-AdenoCA/synthetic_data -s 1 -n 75 --perturbed 0.01 0.02 --overdispersed 2 --contamination 1 5 --trim
-Using SBS1, SBS3, SBS5, SBS9, SBS15, SBS18, SBS20, SBS28, SBS41
-correct None 246.20513888888888
-perturbed 0.01 246.15958333333333
-perturbed 0.02 246.28708333333333
-contamination 1 245.775
-contamination 5 246.09347222222223
-overdispersed 2.0 245.96013888888888

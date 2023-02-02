@@ -1,5 +1,0 @@
-python scripts/infer-loadings-nnls.py data/WGS_PCAWG.96.ready.tsv Ovary-AdenoCA  --signatures-prefix Signature --signatures 1 2 3 5 8 13 18 26 35 39 41 --save-dir WGS_PCAWG.96.Ovary-AdenoCA_NO40/synthetic_data --subst-type SBS -n 113 
-data/WGS_PCAWG.96.ready.tsv
-Using 113 samples
-Using SBS1, SBS2, SBS3, SBS5, SBS8, SBS13, SBS18, SBS26, SBS35, SBS39, SBS41
-max loadings: [18. 13. 47. 53. 34. 29. 37. 49. 19. 18. 19.]

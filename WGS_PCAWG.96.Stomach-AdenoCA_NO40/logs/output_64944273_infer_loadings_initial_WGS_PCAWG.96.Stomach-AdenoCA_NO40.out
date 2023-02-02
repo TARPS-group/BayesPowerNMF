@@ -1,6 +1,0 @@
-python scripts/infer-loadings-only.py data/WGS_PCAWG.96.ready.tsv Stomach-AdenoCA  --signatures-prefix Signature --signatures 1 2 3 5 9 13 15 17a 17b 18 20 21 26 28 41 44 --save-dir WGS_PCAWG.96.Stomach-AdenoCA_NO40/synthetic_data --subst-type SBS -n 75 -a 0.00 --zeta 1    
-data/WGS_PCAWG.96.ready.tsv
-Using 75 samples
-Using SBS1, SBS2, SBS3, SBS5, SBS9, SBS13, SBS15, SBS17a, SBS17b, SBS18, SBS20, SBS21, SBS26, SBS28, SBS41, SBS44
-inferring loadings for 75 samples
-zeta = 1

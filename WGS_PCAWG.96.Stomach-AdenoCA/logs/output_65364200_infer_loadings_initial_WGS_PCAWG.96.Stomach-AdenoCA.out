@@ -1,6 +1,0 @@
-python scripts/infer-loadings-nnls.py data/WGS_PCAWG.96.ready.tsv Stomach-AdenoCA  --signatures-prefix Signature --signatures 1 2 3 5 9 13 15 17a 17b 18 20 21 26 28 40 41 44 --save-dir WGS_PCAWG.96.Stomach-AdenoCA/synthetic_data --subst-type SBS -n 75 
-data/WGS_PCAWG.96.ready.tsv
-Using 75 samples
-Using SBS1, SBS2, SBS3, SBS5, SBS9, SBS13, SBS15, SBS17a, SBS17b, SBS18, SBS20, SBS21, SBS26, SBS28, SBS40, SBS41, SBS44
-Warning: some signatures do not have substantial loadings attributed to them: SBS2, SBS13
-max loadings: [31.  9. 48. 48. 11.  9. 29. 26. 42. 37. 11. 18. 18. 19. 47. 22. 27.]

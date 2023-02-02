@@ -2,13 +2,15 @@ require(dplyr)
 require(ggplot2)
 require(gridExtra)
 
-sig.names <- c('SBS1', 'SBS2', 'SBS3', 'SBS4', 'SBS5', 'SBS6', 'SBS7a', 'SBS7b', 
-               'SBS7c', 'SBS7d', 'SBS8', 'SBS9', 'SBS10a', 'SBS10b', 'SBS11', 
-               'SBS12', 'SBS13', 'SBS14', 'SBS15', 'SBS16', 'SBS17a', 'SBS17b', 
-               'SBS18', 'SBS19', 'SBS20', 'SBS21', 'SBS22', 'SBS23', 'SBS24', 
-               'SBS25', 'SBS26', 'SBS27', 'SBS28', 'SBS29', 'SBS30', 'SBS31', 
-               'SBS32', 'SBS33', 'SBS34', 'SBS35', 'SBS36', 'SBS37', 'SBS38', 
-               'SBS39', 'SBS40', 'SBS41', 'SBS42', 'SBS43', 'SBS44', 'SBS45') 
+# sig.names <- c('SBS1', 'SBS2', 'SBS3', 'SBS4', 'SBS5', 'SBS6', 'SBS7a', 'SBS7b', 
+#                'SBS7c', 'SBS7d', 'SBS8', 'SBS9', 'SBS10a', 'SBS10b', 'SBS11', 
+#                'SBS12', 'SBS13', 'SBS14', 'SBS15', 'SBS16', 'SBS17a', 'SBS17b', 
+#                'SBS18', 'SBS19', 'SBS20', 'SBS21', 'SBS22', 'SBS23', 'SBS24', 
+#                'SBS25', 'SBS26', 'SBS27', 'SBS28', 'SBS29', 'SBS30', 'SBS31', 
+#                'SBS32', 'SBS33', 'SBS34', 'SBS35', 'SBS36', 'SBS37', 'SBS38', 
+#                'SBS39', 'SBS40', 'SBS41', 'SBS42', 'SBS43', 'SBS44', 'SBS45') 
+
+sig.names <- paste("Signature", 1:30) 
 
 
 ######
@@ -30,7 +32,7 @@ exp.names[1] <- "well-specified"
 exp.names <- sub(paste0(seed, "-"), "", exp.names)
 
 ## read in ground truth signatures and loadings
-GT <- file.path("synthetic_data", paste0(synthetic.prefix, seed, "-GT-loadings-trimmed.csv")) %>% read.csv(header = FALSE)
+GT <- file.path("synthetic_data", paste0(synthetic.prefix, seed, "-GT-loadings.csv")) %>% read.csv(header = FALSE)
 GT <- cbind(rep("Ground Truth", nrow(GT)), GT, rep(0L, nrow(GT)))
 colnames(GT) <- c("Experiment", "Mean.Loading", "COSMIC.SBS.Signature", "Cosine.Error")
 GT
@@ -71,9 +73,12 @@ for (i in 1:n.exp)  {
     p[[i]] <- plot.info[[i]] %>% 
         ggplot(aes(Experiment, COSMIC.SBS.Signature, fill = Cosine.Error)) +
         geom_point(aes(size = Mean.Loading), shape = 21) +
-        scale_fill_distiller(limits = c(0, 0.3), na.value = "black", direction = 1) + 
-        ggtitle(exp.names[i]) + labs(x = "", y = "") +
-        theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 0.9))
+        # scale_fill_distiller(limits = c(0, 0.3), na.value = "black", direction = 1) + 
+        scale_fill_gradient(low = "white", high = "dodgerblue4", limits = c(0, 0.3), na.value = "black") +
+        ggtitle(exp.names[i]) + labs(x = "", y = "") + theme_bw() +
+        theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 0.9)) + 
+        geom_hline(yintercept = nrow(GT) + 0.5, color = "red") + 
+        geom_vline(xintercept = 1.5)
 }
 
 
