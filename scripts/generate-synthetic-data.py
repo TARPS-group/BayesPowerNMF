@@ -59,7 +59,7 @@ def main():
     if os.path.exists(loadings_file):
         loadings_array = np.load(loadings_file)
     else:
-        sys.exit("Stage I incomplete. Please try again later.")
+        sys.exit("Stage I incomplete. Missing file " + loadings_file + ". Please try again later.")
 
     # load signatures
     if args.signatures_file == "":

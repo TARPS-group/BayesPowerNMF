@@ -140,7 +140,10 @@ stomach*
 subsample*
 sparse*
 WGS*
+in_vitro_exposures_SBS96_mutation_counts*
+test-liver-WS*
 
 
-# testing batch scripts
+# testing outputs
 out.txt
+nnls_sig_counts.txt

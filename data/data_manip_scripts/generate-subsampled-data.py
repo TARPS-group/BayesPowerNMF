@@ -11,7 +11,6 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('counts_file')
     parser.add_argument('subsample_size', type=int)
-    # parser.add_argument('replicates', type=int)
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--min-permutations', type=int, default=2)
     parser.add_argument('--min-samples', type=int, default=10)

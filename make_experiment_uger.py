@@ -277,7 +277,7 @@ def main():
         subst_type = exp.get("subst_type"),
         num_samples = exp.get("num_samples"),
         plain = "" if exp.getboolean("plain") is False else "--plain ",
-        cosmic = ("" if exp.get("cosmic_version") == "" else "--cosmic-version {}".format(exp.get("cosmic_version")))  
+        cosmic = ("" if exp.get("cosmic_version_internal") == "" else "--cosmic-version {}".format(exp.get("cosmic_version_internal")))  
     )
 
     with open(os.path.join(exp_name, "experiment_scripts", "stage_1.sh"), "w+") as f:
@@ -310,7 +310,7 @@ def main():
         overdispersed = "" if exp.get("overdispersed") == "" else "--overdispersed {}".format(exp.get("overdispersed")),
         contamination = "" if exp.get("contamination") == "" else "--contamination {}".format(exp.get("contamination")),
         trim = "--trim " if exp.getboolean("trim_sigs") else "",
-        cosmic = "" if exp.get("cosmic_version") == "" else "--cosmic-version {}".format(exp.get("cosmic_version"))
+        cosmic = "" if exp.get("cosmic_version_internal") == "" else "--cosmic-version {}".format(exp.get("cosmic_version_internal"))
     )
 
     with open(os.path.join(exp_name, "experiment_scripts", "stage_2.sh"), "w+") as f:
@@ -386,7 +386,7 @@ def main():
         sigs_prefix = exp.get("signatures_prefix"),
         signatures = "", #signatures = exp.get("putative_sigs"),
         opts = "--ignore-summary ",
-        cosmic = ("" if exp.get("cosmic_version") == "" else "--cosmic-version {}".format(exp.get("cosmic_version")))
+        cosmic = ("" if exp.get("cosmic_version_internal") == "" else "--cosmic-version {}".format(exp.get("cosmic_version_internal")))
     )
 
     with open(os.path.join(exp_name, "experiment_scripts", "run_viz_3.sh"), "w+") as f:
@@ -472,7 +472,7 @@ def main():
         sigs_prefix = exp.get("signatures_prefix"),
         signatures = "",
         opts = "--ignore-summary ",
-        cosmic = ("" if exp.get("cosmic_version") == "" else "--cosmic-version {}".format(exp.get("cosmic_version")))
+        cosmic = ("" if exp.get("cosmic_version_final") == "" else "--cosmic-version {}".format(exp.get("cosmic_version_final")))
     )
 
     with open(os.path.join(exp_name, "experiment_scripts", "run_viz_5.sh"), "w+") as f:

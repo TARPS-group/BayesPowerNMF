@@ -369,6 +369,8 @@ def main():
             msi.mutsigs_samples.squeeze(), sig_names_with_mu(msi), comp_sigs, comp_sig_names, top=2, bipartite = True, save_path_base=output_file_template.format(
                 'best-seed-comparison-zeta-{:.3f}'.format(zeta)))
         plt.close('all')
+        np.savetxt(output_file_template.format('best-seed-loadings-zeta-{:.3f}.tsv'.format(zeta)), msi.mean_loadings[0:expected_K(msi),:], delimiter = "\t")
+        np.savetxt(output_file_template.format('best-seed-sigs-zeta-{:.3f}.tsv'.format(zeta)), msi.mean_mutsigs[0:expected_K(msi),:], delimiter = "\t")
 
     ### Compare all signatures to existing ones
     for zeta in zetas:

@@ -11,16 +11,13 @@ virtual_env = /cga/scarter/cathyxue/mutsig-venv
 ### STAGE I ###
 signatures_file = 
 signatures_prefix = Signature
-iters = 
-a_init = 0
-median = False
-MAP = False
+cosmic_version = v2
 subst_type = SBS
-putative_sigs = 1 4 5 6 9 12 14 16 17a 17b 18 19 22 24 26 28 29 30 31 35 40
+putative_sigs = 
 plain = False
 
 ### STAGE II ###
-trim_sigs = False
+trim_sigs = True
 synthetic_data_seed = 1
 perturbed = 0.0025
 contamination = 2
@@ -37,14 +34,10 @@ K = 45
 samples = 10000
 burnin = 10000
 max_time = 96:00:00
-a_new = 0.5
+a = 0.5
 J0 = 10.
+eps = 0.001
 skip = 25
-p_sigs_zero = 0.5
-rho_new = 
-loadings_quantile_1 = 
-loadings_quantile_99 = 
-sparse = True
 
 
 
@@ -53,7 +46,7 @@ sparse = True
 
 REPLICATE_TEMPLATE = """[SUBSAMPLE-{size}-{rep}]
 experiment_name = subsample-liver-{size}-replicate-{rep}
-data = data/synthetic-liver-subsamples/synthetic-326-liver-hcc-subsample-{size}-replicate-{rep}.tsv
+data = data/synthetic-liver-subsamples/synthetic-326-liver-hcc-all-seed-1-subsample-{size}-replicate-{rep}.tsv
 sample_prefixes = liver-hcc-subsample-{size}-replicate-{rep}
 num_samples = {size}
 plain = True
