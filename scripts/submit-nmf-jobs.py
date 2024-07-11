@@ -21,7 +21,7 @@ def main():
     
     any_submit = False
     if args.slurm:
-        batch_template = "sbatch --array={seeds} --job-name={exp}_{prefix}_NMF_{zeta} -o " + os.path.join(args.experiment_dir, "logs", "output_\%A_\%a_NMF_{exp}_{prefix}.out") + " -e " + os.path.join(args.experiment_dir, "logs", "error_%A_%a_NMF_{prefix}.err") + " " + os.path.join(args.experiment_dir, "experiment_scripts", "run_nmf.sh") + " {zeta} {data_file}"
+        batch_template = "sbatch --array={seeds} --job-name={exp}_{prefix}_NMF_{zeta} " + os.path.join(args.experiment_dir, "experiment_scripts", "run_nmf.sh") + " {zeta} {data_file}"
     else:
         batch_template = "qsub -t {seeds} -N {exp}_{prefix}_NMF_{zeta} " + os.path.join(args.experiment_dir, "experiment_scripts", "run_nmf.sh") + " {zeta} {data_file}"
 
@@ -32,6 +32,7 @@ def main():
             for s in args.seeds:
                 if not os.path.exists(os.path.join(args.experiment_dir, "results", args.output_template.format(exp = exp, seed = s, zeta = zeta))):
                     run_seeds.append(s)
+                    # print("Missing " + os.path.join(args.experiment_dir, "results", args.output_template.format(exp = exp, seed = s, zeta = zeta)))
                     any_submit = True
 
             if len(run_seeds) > 0:

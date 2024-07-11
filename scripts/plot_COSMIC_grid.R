@@ -46,7 +46,7 @@ for (i in 1:n.exp)  {
     plot.info[[i]] <- GT
     sim.list <- c("Ground Truth")
     for (zeta in zetas)  {
-        sim.exp <- sprintf("%s_%.1f", exp.names[i], zeta)
+        sim.exp <- sprintf(paste0("%s_%.", - floor(log10(min(zetas))), "f"), exp.names[i], zeta)
         summary.file <- sprintf("best-seed-comparison-zeta-%.3f-list.csv", zeta) %>%
             file.path("figures", synthetic.dirs[i], .)
         if (file.exists(summary.file))  {

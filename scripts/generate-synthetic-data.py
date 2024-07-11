@@ -191,6 +191,7 @@ def generate_counts_with_error_loading(loadings, sigs, concentration=1,
     for j, loading in enumerate(loadings.T):
         error_sig = np.random.dirichlet(concentration*np.ones(I))[np.newaxis,:]
         error_loading = error_proportion * np.sum(loading)
+        # error_loading = min(error_proportion * np.sum(loading), 1000)
         sigs_with_error = np.concatenate([sigs, error_sig], axis=0)
         loading_with_error = np.concatenate([(1-error_proportion)*loading, [error_loading]])
         counts[j]  = np.random.poisson(loading_with_error.dot(sigs_with_error))

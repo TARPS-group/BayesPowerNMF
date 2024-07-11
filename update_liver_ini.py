@@ -4,14 +4,20 @@ import numpy as np
 
 DEFAULTS = """[DEFAULT]
 experiment_name = temp_experiment
-base_dir = /cga/scarter/cathyxue/bayes-power-sig
-virtual_env = /cga/scarter/cathyxue/mutsig-venv
+
+slurm = True
+queue = shared
+conda_env = mutsig-venv
+
+base_dir = /n/miller_lab/csxue/bayes-power-sig
+# virtual_env = /cga/scarter/cathyxue/mutsig-venv
+
 
 
 ### STAGE I ###
 signatures_file = 
 signatures_prefix = Signature
-cosmic_version = v2
+cosmic_version_internal = v2
 subst_type = SBS
 putative_sigs = 
 plain = False
@@ -19,9 +25,9 @@ plain = False
 ### STAGE II ###
 trim_sigs = True
 synthetic_data_seed = 1
-perturbed = 0.0025
-contamination = 2
-overdispersed = 2
+perturbed = 
+contamination = 
+overdispersed = 
 
 ### STAGE III-V ###
 inferring_signatures = True
@@ -38,7 +44,7 @@ a = 0.5
 J0 = 10.
 eps = 0.001
 skip = 25
-
+cosmic_version_final = v2
 
 
 """

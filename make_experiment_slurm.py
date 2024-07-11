@@ -12,10 +12,10 @@ INFER_LOADINGS_TEMPLATE = """#!/bin/bash
 #SBATCH -t 0-02:00 
 #SBATCH -p {queue}
 #SBATCH --mem=64G 
-#SBATCH -o {log_dir}/output_%j_{jobname}.out 
-#SBATCH -e {log_dir}/error_%j_{jobname}.err 
+#SBATCH -o {log_dir}/output_%j_%x.out 
+#SBATCH -e {log_dir}/error_%j_%x.err 
 
-module load gcc/8.2.0-fasrc01 python/3.8.5-fasrc01
+module load python/3.10.9-fasrc01 gcc/10.2.0-fasrc01 
 
 eval "$(conda shell.bash hook)"
 conda activate {conda_env}
@@ -28,7 +28,7 @@ SIGNATURES="{signatures}"
 SAVE_DIR={save_dir}
 SUB_TYPE={subst_type}
 N={num_samples}
-OPTS="{opts}"
+OPTS="{plain}{cosmic}"
 
 cd {BPS_dir}
 echo "python scripts/infer-loadings-nnls.py $DATA $FILTER $SIGS_FILE --signatures-prefix $SIGS_PREFIX --signatures $SIGNATURES --save-dir $SAVE_DIR --subst-type $SUB_TYPE -n $N $OPTS"
@@ -41,10 +41,10 @@ GENERATE_SYNTHETIC_TEMPLATE = """#!/bin/bash
 #SBATCH -t 0-01:00 
 #SBATCH -p {queue}
 #SBATCH --mem=16G 
-#SBATCH -o {log_dir}/output_%j_{jobname}.out 
-#SBATCH -e {log_dir}/error_%j_{jobname}.err 
+#SBATCH -o {log_dir}/output_%j_%x.out 
+#SBATCH -e {log_dir}/error_%j_%x.err 
 
-module load gcc/8.2.0-fasrc01 python/3.8.5-fasrc01
+module load python/3.10.9-fasrc01 gcc/10.2.0-fasrc01 
 
 eval "$(conda shell.bash hook)"
 conda activate {conda_env}
@@ -59,7 +59,7 @@ N={num_samples}
 PERTURBED="{perturbed}"
 OVERDISPERSED="{overdispersed}"
 CONTAMINATION="{contamination}"
-OPTS="{trim}"
+OPTS="{trim}{cosmic}"
 
 cd {BPS_dir}
 echo "python scripts/generate-synthetic-data.py $NEW_PREFIX $SIGS_FILE --signatures-prefix $SIGS_PREFIX --signatures $SIGNATURES --save-dir $SAVE_DIR -s $S -n $N $PERTURBED $OVERDISPERSED $CONTAMINATION $OPTS"
@@ -72,16 +72,17 @@ INFER_LOADINGS_AND_SIGS_TEMPLATE = """#!/bin/bash
 #SBATCH -t 7-00:00 
 #SBATCH -p {queue}
 #SBATCH --mem=32G 
-#SBATCH -o {log_dir}/output_%A_%a_{jobname}.out 
-#SBATCH -e {log_dir}/error_%A_%a_{jobname}.err  
+#SBATCH -o {log_dir}/output_%A_%a_%x.out 
+#SBATCH -e {log_dir}/error_%A_%a_%x.err  
 
-module load gcc/8.2.0-fasrc01 python/3.8.5-fasrc01
+module load python/3.10.9-fasrc01 gcc/10.2.0-fasrc01 
 
 eval "$(conda shell.bash hook)"
 conda activate {conda_env}
 
 ZETA=$1
 DATA="{exp_name}/synthetic_data/${{2}}"
+MODEL={model}
 I={I}
 J={n}
 K={K}
@@ -90,31 +91,31 @@ BURNIN={burnin}
 THIN={thin}
 RESULTS_DIR={exp_name}/results
 SEED=$SLURM_ARRAY_TASK_ID
-OPTS="{p0}{q1}{q99}{opts}"
+OPTS="{opts}"
 
 
 cd {BPS_dir}
-echo "python scripts/infer-mutsigs.py $DATA $RESULTS_DIR -m normalized_v2 -s $SAMPLES -b $BURNIN -I $I -K $K --thin $THIN -e 1e-3 --zeta $ZETA --max-J $J --seed $SEED $OPTS"
-python scripts/infer-mutsigs.py $DATA $RESULTS_DIR -m normalized_v2 -s $SAMPLES -b $BURNIN -I $I -K $K --thin $THIN -e 1e-3 --zeta $ZETA --max-J $J --seed $SEED $OPTS
+echo "python scripts/infer-mutsigs.py $DATA $RESULTS_DIR -m $MODEL -s $SAMPLES -b $BURNIN -I $I -K $K --thin $THIN -e 1e-3 --zeta $ZETA --max-J $J --seed $SEED $OPTS"
+python scripts/infer-mutsigs.py $DATA $RESULTS_DIR -m $MODEL -s $SAMPLES -b $BURNIN -I $I -K $K --thin $THIN -e 1e-3 --zeta $ZETA --max-J $J --seed $SEED $OPTS
 """
 
 INFER_LOADINGS_AND_SIGS_LOOP_TEMPLATE = """#!/bin/bash
 
 #SBATCH --job-name {jobname} 
 #SBATCH -t 0-00:15 
-#SBATCH -p shared
+#SBATCH -p {queue}
 #SBATCH --mem=8G 
 #SBATCH -o {log_dir}/output_%j_NMF_synthetic_{exp_name}.out 
 #SBATCH -e {log_dir}/error_%j_NMF_synthetic_{exp_name}.err 
 
-module load gcc/8.2.0-fasrc01 python/3.8.5-fasrc01
+module load python/3.10.9-fasrc01 gcc/10.2.0-fasrc01 
 
 eval "$(conda shell.bash hook)"
 conda activate {conda_env}
 
 ZETAS="{zetas}"
 PREFIX={synthetic_prefix}
-TEMPLATE="{prefix}{{exp}}-burnin-{burnin}-samps-{samps}-K-{K}-seed-{{seed}}-a-{a:.2f}-J0-{J0:.1f}-zeta-{{zeta:.3f}}-{opts}samples.h5"
+TEMPLATE="{prefix}{{exp}}-{model}-burnin-{burnin}-samps-{samps}-K-{K}-seed-{{seed}}-a-{a:.2f}-J0-{J0:.1f}-zeta-{{zeta:.3f}}-{opts}samples.h5"
 EXPS="{exp_list}"
 EXP_DIR="{exp_name}"
 SEEDS="{seeds}"
@@ -125,37 +126,90 @@ echo "python scripts/submit-nmf-jobs.py $PREFIX $EXP_DIR $TEMPLATE --seeds $SEED
 python scripts/submit-nmf-jobs.py $PREFIX $EXP_DIR $TEMPLATE --seeds $SEEDS --zetas $ZETAS --exp-list $EXPS --slurm
 """
 
-MAKE_PLOTS_TEMPLATE = """#!/bin/bash
+
+MAKE_PLOTS_LOOP_TEMPLATE = """#!/bin/bash
 
 #SBATCH --job-name {jobname} 
-#SBATCH -t 0-06:00 
+#SBATCH -t 0-00:05 
 #SBATCH -p {queue}
 #SBATCH --mem=32G 
-#SBATCH -o {log_dir}/output_%j_{jobname}.out 
-#SBATCH -e {log_dir}/error_%j_{jobname}.err 
+#SBATCH -o {log_dir}/output_%j_%x.out 
+#SBATCH -e {log_dir}/error_%j_%x.err 
 
-module load gcc/8.2.0-fasrc01 python/3.8.5-fasrc01
+module load python/3.10.9-fasrc01 gcc/10.2.0-fasrc01 
 
 eval "$(conda shell.bash hook)"
 conda activate {conda_env}
 
-PREFIX={experiment_name}-burnin-{B}-samps-{S}-K-{K}
+ZETA={final_zeta}
+
+cd {BPS_dir}
+for EXP in {exp_list}
+do
+    echo "sbatch --job-name=generate_plots_{exp_name}_${{EXP}} {exp_name}/experiment_scripts/run_viz_{stage}.sh $EXP $ZETA"
+    sbatch --job-name=generate_plots_{exp_name}_${{EXP}} {exp_name}/experiment_scripts/run_viz_{stage}.sh $EXP $ZETA
+done
+"""
+
+
+MAKE_PLOTS_TEMPLATE = """#!/bin/bash
+
+#SBATCH -t 0-06:00 
+#SBATCH -p {queue}
+#SBATCH --mem=32G 
+#SBATCH -o {log_dir}/output_%j_%x.out 
+#SBATCH -e {log_dir}/error_%j_%x.err 
+
+module load python/3.10.9-fasrc01 gcc/10.2.0-fasrc01 
+
+eval "$(conda shell.bash hook)"
+conda activate {conda_env}
+
+EXP=$1
+SYNTHETIC_PREFIX="{synthetic_prefix}"
+PREFIX={model}-burnin-{B}-samps-{S}-K-{K}
 MID=a-{a:.2f}-J0-{J0:.1f}
 EXP_DIR={exp_dir}
-SEEDS={seeds}
-ZETAS={zetas}
+SEEDS="{seeds}"
+ZETAS="{zetas}"
 SKIP={skip}
 SAVE_DIR=figures/
 RESULTS_DIR=results/
-DATA={data}
-SUBST_TYPE={subst_type}
-OPTS={opts}
+DATA=synthetic_data/${{SYNTHETIC_PREFIX}}${{EXP}}.tsv
+SUBST_TYPE="{subst_type}"
+SIGS_FILE="{sigs_file}"
+SIGS_PREFIX="{sigs_prefix}"
+SIGNATURES="{signatures}"
+OPTS="{opts}{cosmic}"
 
 
 cd {BPS_dir}
 
-echo "python scripts/generate-multi-zeta-results-figs.py $PREFIX $MID $EXP_DIR --seeds $SEEDS --zetas $ZETAS --skip $SKIP --save-dir $SAVE_DIR --results-dir $RESULTS_DIR --counts-file $DATA --subst-type $SUBST_TYPE $OPTS"
-python scripts/generate-multi-zeta-results-figs.py $PREFIX $MID $EXP_DIR --seeds $SEEDS --zetas $ZETAS --skip $SKIP --save-dir $SAVE_DIR --results-dir $RESULTS_DIR --counts-file $DATA --subst-type $SUBST_TYPE $OPTS
+echo "python scripts/generate-multi-zeta-results-figs.py ${{SYNTHETIC_PREFIX}}${{EXP}}-$PREFIX $MID $EXP_DIR --seeds $SEEDS --zetas $ZETAS --skip $SKIP --save-dir $SAVE_DIR --results-dir $RESULTS_DIR --counts-file $DATA --subst-type $SUBST_TYPE $SIGS_FILE --signatures-prefix $SIGS_PREFIX --signatures $SIGNATURES $OPTS"
+python scripts/generate-multi-zeta-results-figs.py ${{SYNTHETIC_PREFIX}}${{EXP}}-$PREFIX $MID $EXP_DIR --seeds $SEEDS --zetas $ZETAS --skip $SKIP --save-dir $SAVE_DIR --results-dir $RESULTS_DIR --counts-file $DATA --subst-type $SUBST_TYPE $SIGS_FILE --signatures-prefix $SIGS_PREFIX --signatures $SIGNATURES $OPTS
+"""
+
+
+PLOT_COMPARISON_TEMPLATE = """#!/bin/bash
+
+#SBATCH --job-name {jobname} 
+#SBATCH -t 0-00:05 
+#SBATCH -p {queue}
+#SBATCH --mem=16G 
+#SBATCH -o {log_dir}/output_%j_%x.out 
+#SBATCH -e {log_dir}/error_%j_%x.err 
+
+module load R/4.2.2-fasrc01
+
+EXP_DIR={exp_dir}
+SYNTHETIC_PREFIX="{synthetic_prefix}"
+SYNTHETIC_SUFFIX="-{model}-burnin-{B}-samps-{S}-K-{K}-a-{a:.2f}-J0-{J0:.1f}-multi-zeta"
+ZETAS="{zetas}"
+
+
+cd {BPS_dir}
+echo "Rscript scripts/plot_COSMIC_grid.R $EXP_DIR $SYNTHETIC_PREFIX $SYNTHETIC_SUFFIX '$ZETAS'"
+Rscript scripts/plot_COSMIC_grid.R $EXP_DIR $SYNTHETIC_PREFIX $SYNTHETIC_SUFFIX "$ZETAS"
 """
 
 def parse_args():
@@ -197,7 +251,7 @@ def main():
     ## Stage I 
     stage_1_content = INFER_LOADINGS_TEMPLATE.format(
         jobname = "infer_loadings_initial_" + exp_name,
-        queue = exp.get("queue"),
+        queue = exp.get("main_queue"),
         log_dir = os.path.join(wd, exp_name, "logs"),
         conda_env = exp.get("conda_env"),
         BPS_dir = wd,
@@ -209,35 +263,27 @@ def main():
         save_dir = os.path.join(exp_name, "synthetic_data"),
         subst_type = exp.get("subst_type"),
         num_samples = exp.get("num_samples"),
-        # a = exp.getfloat("a_init"),
-        # zeta = exp.get("loadings_inference_power"),
-        # p0 = ("" if exp.get("p_sigs_zero_init") == "" else "--prob-zero {}".format(exp.get("p_sigs_zero_init"))) + ("" if exp.getboolean("sparse_init") is False else "--sparse "),
-        # q1 = ("" if exp.get("loadings_quantile_1_init") == "" else "--q1 {}".format(exp.get("loadings_quantile_1_init"))),
-        # q99 = ("" if exp.get("loadings_quantile_99_init") == "" else "--q99 {}".format(exp.get("loadings_quantile_99_init"))),
-        opts = ("" if exp.getboolean("plain") is False else "--plain ") + ("" if exp.getboolean("median") is False else "--median ") + ("" if exp.getboolean("MAP") is False else "--MAP ") + ("" if exp.get("iters") == "" else "--iters {} ".format(exp.get("iters")))
+        plain = "" if exp.getboolean("plain") is False else "--plain ",
+        cosmic = ("" if exp.get("cosmic_version_internal") == "" else "--cosmic-version {}".format(exp.get("cosmic_version_internal")))  
     )
 
     with open(os.path.join(exp_name, "experiment_scripts", "stage_1.sh"), "w+") as f:
         f.writelines(stage_1_content)
 
+    sigs_index_string = "all" if exp.get("putative_sigs") == "" else "-".join(exp.get("putative_sigs").split())
+
     synthetic_prefix = "synthetic-{}-{}-{}".format(
         exp.get("num_samples"), 
         exp.get("sample_prefixes"), 
-        "-".join(exp.get("putative_sigs").split())
+        sigs_index_string
     ).lower()
-    if exp.getfloat("a_init") != 0:
-        synthetic_prefix += '-a-{:.2f}'.format(float(exp.get("a_init")))
-    if exp.getfloat("loadings_inference_power") != 1:
-        base_description += '-zeta-{:.1f}'.format(float(exp.get("loadings_inference_power")))
-    if exp.getboolean("median") is True:
-        synthetic_prefix += '-median'
 
     ## Stage II
     seed = exp.get("synthetic_data_seed")
 
     stage_2_content = GENERATE_SYNTHETIC_TEMPLATE.format(
         jobname = "generate_synthetic_data_" + exp_name,
-        queue = exp.get("queue"),
+        queue = exp.get("main_queue"),
         log_dir = os.path.join(wd, exp_name, "logs"),
         conda_env = exp.get("conda_env"),
         BPS_dir = wd,
@@ -251,7 +297,8 @@ def main():
         perturbed = "" if exp.get("perturbed") == "" else "--perturbed {}".format(exp.get("perturbed")),
         overdispersed = "" if exp.get("overdispersed") == "" else "--overdispersed {}".format(exp.get("overdispersed")),
         contamination = "" if exp.get("contamination") == "" else "--contamination {}".format(exp.get("contamination")),
-        trim = "--trim" if (exp.getboolean("sparse_init") or exp.getboolean("trim_sigs")) else "" # trim if sparse or if desired
+        trim = "--trim " if exp.getboolean("trim_sigs") else "",
+        cosmic = "" if exp.get("cosmic_version_internal") == "" else "--cosmic-version {}".format(exp.get("cosmic_version_internal"))
     )
 
     with open(os.path.join(exp_name, "experiment_scripts", "stage_2.sh"), "w+") as f:
@@ -260,33 +307,33 @@ def main():
     synthetic_experiments = [seed] + ["{}-overdispersed-{}".format(seed, p) for p in map(float, exp.get("overdispersed").split())] + ["{}-contamination-{}".format(seed, p) for p in exp.get("contamination").split()] + ["{}-perturbed-{}".format(seed, p) for p in exp.get("perturbed").split()]
     synthetic_data_files = ["{}-seed-{}.tsv".format(synthetic_prefix, se) for se in synthetic_experiments]
 
-    ### NMF script
+    ## NMF script
     nmf_content = INFER_LOADINGS_AND_SIGS_TEMPLATE.format(
         jobname = "NMF_" + exp_name,
-        queue = exp.get("queue"),
+        queue = exp.get("nmf_queue"),
         log_dir = os.path.join(wd, exp_name, "logs"),
         conda_env = exp.get("conda_env"),
+        max_time = exp.get("max_time"),
         exp_name = exp_name,
         BPS_dir = wd,
+        model = exp.get("model"),
         I = 96 if exp.get("subst_type") == "SBS" else (78 if exp.get("subst_type") == "DBS" else 83),
         n = exp.get("num_samples"),
         K = exp.get("K"),
         samps = exp.get("samples"),
         burnin = exp.get("burnin"),
         thin = exp.get("thin"),
-        p0 = ("" if exp.get("p_sigs_zero") == "" else "--prob-zero {} ".format(exp.get("p_sigs_zero"))),
-        q1 = ("" if exp.get("loadings_quantile_1") == "" else "--q1 {} ".format(exp.get("loadings_quantile_1"))),
-        q99 = ("" if exp.get("loadings_quantile_99") == "" else "--q99 {} ".format(exp.get("loadings_quantile_99"))),
-        opts = ("--no-rho " if exp.get("rho_new") == "" else "") + "-a " + exp.get("a_new") + " --J0 " + exp.get("J0") + (" --sparse" if exp.getboolean("sparse") else "")
+        opts = "-a " + exp.get("a") + " --J0 " + exp.get("J0") 
     )
 
     with open(os.path.join(exp_name, "experiment_scripts", "run_nmf.sh"), "w+") as f:
         f.writelines(nmf_content)
 
 
-    ### Stage IIIa
+    ## Stage IIIa
     stage_3_a_content = INFER_LOADINGS_AND_SIGS_LOOP_TEMPLATE.format(
         jobname = "submit_NMF_" + exp_name,
+        queue = exp.get("main_queue"),
         log_dir = os.path.join(wd, exp_name, "logs"),
         conda_env = exp.get("conda_env"),
         exp_name = exp_name,
@@ -295,100 +342,149 @@ def main():
         synthetic_prefix = synthetic_prefix,
         prefix = synthetic_prefix + "-seed-",
         exp_list = " ".join(synthetic_experiments),
+        model = exp.get("model"),
         seeds = " ".join(map(str, list(range(1, int(exp.get("no_chains")) + 1)))),
         K = exp.get("K"),
         samps = exp.get("samples"),
         burnin = exp.get("burnin"),
-        a = float(exp.get("a_new")),
+        a = float(exp.get("a")),
         J0 = float(exp.get("J0")),
-        opts = ("no-rho-" if exp.get("rho_new") == "" else "")
+        opts = ""
     )
 
     with open(os.path.join(exp_name, "experiment_scripts", "stage_3_a.sh"), "w+") as f:
         f.writelines(stage_3_a_content)
 
-
     ## Stage IIIb
-    stage_3_b_content = MAKE_PLOTS_TEMPLATE.format(
-        jobname = "generate_plots_{}".format(sexp),
-        queue = exp.get("queue"),
+    viz_content_3 = MAKE_PLOTS_TEMPLATE.format(
         log_dir = os.path.join(wd, exp_name, "logs"),
+        queue = exp.get("main_queue"),
         conda_env = exp.get("conda_env"),
-        BPS_dir = os.path.join(wd),
-        experiment_name = synthetic_prefix,
+        BPS_dir = wd,
+        exp_dir = exp_name,
+        synthetic_prefix = synthetic_prefix + "-seed-",
+        model = exp.get("model"),
         B = exp.get("burnin"),
         S = exp.get("samples"),
         K = exp.get("K"),
-        a = exp.getfloat("a_new"),
-        J0 = exp.getint("J0"),
-        base_dir = wd,
-        rho_cond = "" if exp.get("rho_new") == "" else "--samp-info no-rho- ",
-        signatures_cond = "" if exp.get("signatures_file") == "" else "--signatures-file {} ".format(exp.get("signatures_file")),
-        seeds = " ".join([str(s) for s in range(int(exp.get("seed_start")), int(exp.get("seed_end")) + 1)]),
+        a = float(exp.get("a")),
+        J0 = float(exp.get("J0")),
+        seeds = " ".join(map(str, list(range(1, int(exp.get("no_chains")) + 1)))),
         zetas = exp.get("testing_powers"),
         skip = exp.get("skip"),
-        save_dir = os.path.join(wd, exp_name, "figures"),
-        results_dir = os.path.join(wd, exp_name, "results"),
-        data = sdata_path,
         subst_type = exp.get("subst_type"),
-        opts = "--ignore-summary"
+        sigs_file = "" if exp.get("signatures_file") == "" else "--signatures-file {}".format(exp.get("signatures_file")),
+        sigs_prefix = exp.get("signatures_prefix"),
+        signatures = "", #signatures = exp.get("putative_sigs"),
+        opts = "--ignore-summary ",
+        cosmic = ("" if exp.get("cosmic_version_internal") == "" else "--cosmic-version {}".format(exp.get("cosmic_version_internal")))
     )
 
-    with open(os.path.join(exp_name, "experiment_scripts", "helper", "stage_3_b_{}.sh".format(sexp)), "w+") as f:
+    with open(os.path.join(exp_name, "experiment_scripts", "run_viz_3.sh"), "w+") as f:
+        f.writelines(viz_content_3)
+
+    stage_3_b_content = MAKE_PLOTS_LOOP_TEMPLATE.format(
+        jobname = "generate_plot_jobs_" + exp_name,
+        queue = exp.get("main_queue"),
+        log_dir = os.path.join(wd, exp_name, "logs"),
+        conda_env = exp.get("conda_env"),
+        BPS_dir = os.path.join(wd),
+        exp_name = exp_name,
+        exp_list = " ".join(synthetic_experiments),
+        final_zeta = "",
+        stage = str(3)
+    )
+
+    with open(os.path.join(exp_name, "experiment_scripts", "stage_3_b.sh"), "w+") as f:
         f.writelines(stage_3_b_content)
 
+    ## Stage IV
+    stage_4_content = PLOT_COMPARISON_TEMPLATE.format(
+        jobname = "plot_comparison_" + exp_name,
+        queue = exp.get("main_queue"),
+        log_dir = os.path.join(wd, exp_name, "logs"),
+        BPS_dir = wd,
+        exp_dir = os.path.join(wd, exp_name),
+        synthetic_prefix = synthetic_prefix + "-seed-",
+        model = exp.get("model"),
+        B = exp.get("burnin"),
+        S = exp.get("samples"),
+        K = exp.get("K"),
+        a = float(exp.get("a")),
+        J0 = float(exp.get("J0")),
+        zetas = exp.get("testing_powers")
+    )
 
-    # ## Stage IIIc
+    with open(os.path.join(exp_name, "experiment_scripts", "stage_4.sh"), "w+") as f:
+        f.writelines(stage_4_content)
 
     ## Stage Va
     stage_5_a_content = INFER_LOADINGS_AND_SIGS_LOOP_TEMPLATE.format(
         jobname = "submit_NMF_" + exp_name,
+        queue = exp.get("main_queue"),
         log_dir = os.path.join(wd, exp_name, "logs"),
         conda_env = exp.get("conda_env"),
         exp_name = exp_name,
         BPS_dir = wd,
         zetas = "$1",
-        synthetic_prefix = exp_name,
-        prefix = exp_name,
+        synthetic_prefix = exp.get("sample_prefixes"),
+        prefix = exp.get("sample_prefixes"),
         exp_list = "",
+        model = exp.get("model"),
         seeds = " ".join(map(str, list(range(1, int(exp.get("no_chains")) + 1)))),
         K = exp.get("K"),
         samps = exp.get("samples"),
         burnin = exp.get("burnin"),
-        a = float(exp.get("a_new")),
+        a = float(exp.get("a")),
         J0 = float(exp.get("J0")),
-        opts = ("no-rho-" if exp.get("rho_new") == "" else "")
+        opts = ""
     )
 
     with open(os.path.join(exp_name, "experiment_scripts", "stage_5_a.sh"), "w+") as f:
         f.writelines(stage_5_a_content)
 
-    # ## Stage Vb
-    # ### Script
-    # stage_Vb_content = MAKE_PLOTS_TEMPLATE.format(
-    #     log_dir = os.path.join(wd, exp_name, "logs"),
-    #     virtual_env = exp.get("virtual_env"),
-    #     BPS_dir = os.path.join(wd),
-    #     experiment_name = exp_name,
-    #     B = exp.get("burnin"),
-    #     S = exp.get("samples"),
-    #     K = exp.get("K"),
-    #     a = float(exp.get("a_new")),
-    #     J0 = int(exp.get("J0")),
-    #     base_dir = wd,
-    #     rho_cond = "" if exp.get("rho_new") is None else "--samp-info no-rho- ",
-    #     signatures_cond = "" if exp.get("signatures_file") == "" else "--signatures-file {} ".format(exp.get("signatures_file")),
-    #     seeds = " ".join([str(s) for s in range(int(exp.get("seed_start")), int(exp.get("seed_end")) + 1)]),
-    #     zetas = "$1",
-    #     skip = exp.get("skip"),
-    #     save_dir = os.path.join(wd, exp_name, "figures"),
-    #     results_dir = os.path.join(wd, exp_name, "results"),
-    #     data = os.path.join(wd, exp.get("data")),
-    #     subst_type = exp.get("subst_type")
-    # )
+    ## Stage Vb
+    viz_content_5 = MAKE_PLOTS_TEMPLATE.format(
+        log_dir = os.path.join(wd, exp_name, "logs"),
+        queue = exp.get("main_queue"),
+        conda_env = exp.get("conda_env"),
+        BPS_dir = wd,
+        exp_dir = exp_name,
+        synthetic_prefix = "",
+        model = exp.get("model"),
+        B = exp.get("burnin"),
+        S = exp.get("samples"),
+        K = exp.get("K"),
+        a = float(exp.get("a")),
+        J0 = float(exp.get("J0")),
+        seeds = " ".join(map(str, list(range(1, int(exp.get("no_chains")) + 1)))),
+        zetas = "${*:2}",
+        skip = exp.get("skip"),
+        subst_type = exp.get("subst_type"),
+        sigs_file = "" if exp.get("signatures_file") == "" else "--signatures-file {}".format(exp.get("signatures_file")),
+        sigs_prefix = exp.get("signatures_prefix"),
+        signatures = "",
+        opts = "--ignore-summary ",
+        cosmic = ("" if exp.get("cosmic_version_final") == "" else "--cosmic-version {}".format(exp.get("cosmic_version_final")))
+    )
 
-    # with open(os.path.join(exp_name, "experiment_scripts", "stage_Vb.sh"), "w+") as f:
-    #     f.writelines(stage_Vb_content)
+    with open(os.path.join(exp_name, "experiment_scripts", "run_viz_5.sh"), "w+") as f:
+        f.writelines(viz_content_5)
+
+    stage_5_b_content = MAKE_PLOTS_LOOP_TEMPLATE.format(
+        jobname = "generate_plot_jobs_" + exp_name,
+        queue = exp.get("main_queue"),
+        log_dir = os.path.join(wd, exp_name, "logs"),
+        conda_env = exp.get("conda_env"),
+        BPS_dir = os.path.join(wd),
+        exp_name = exp_name,
+        exp_list = exp.get("sample_prefixes") + "_original_counts",
+        final_zeta = "$*",
+        stage = str(5)
+    )
+
+    with open(os.path.join(exp_name, "experiment_scripts", "stage_5_b.sh"), "w+") as f:
+        f.writelines(stage_5_b_content)
 
 if __name__ == '__main__':
     main()
