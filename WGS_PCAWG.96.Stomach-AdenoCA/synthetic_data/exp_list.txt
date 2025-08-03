@@ -1,4 +1,0 @@
-1
-1-perturbed-0.0025
-1-contamination-2
-1-overdispersed-2.0
